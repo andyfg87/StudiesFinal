@@ -1,0 +1,10 @@
+@model PatientInputVM
+@{
+    ViewData["Title"] = "Editar paciente";
+}
+
+<partial name="_PatientForm" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

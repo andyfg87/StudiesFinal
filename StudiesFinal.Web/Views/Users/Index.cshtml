@@ -1,0 +1,94 @@
+@using StudiesFinal.Web.Paginations
+@model PaginatedList<UserDisplayVM>
+
+@{
+    ViewData["Title"] = "Usuarios";
+    var fSearch = Context.Request.Query["search"].ToString();
+    var me = User.UserId();
+}
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
+        <div>
+            <h2>Usuarios</h2>
+            <div class="ls-sub">Administradores, doctores y técnicos con acceso a la aplicación</div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Nuevo usuario
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-12 col-md-6 col-lg-4">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="search" class="form-control" id="search" name="search" placeholder="Usuario o nombre…" value="@fSearch" />
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle ls-table mb-0">
+            <thead>
+                <tr>
+                    <th>@Html.SortHeader("Nombre", "name")</th>
+                    <th>@Html.SortHeader("Usuario", "user")</th>
+                    <th>@Html.SortHeader("Rol", "role")</th>
+                    <th>Estado</th>
+                    <th class="text-end"><span class="visually-hidden">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-label="Nombre" class="fw-semibold">@item.FullName @(item.Id == me ? "(tú)" : "")</td>
+                        <td data-label="Usuario">@item.UserName</td>
+                        <td data-label="Rol">
+                            <span class="ls-pill @(item.Role == UserRole.Admin ? "danger" : item.Role == UserRole.Doctor ? "primary" : "info")">@item.RoleLabel</span>
+                        </td>
+                        <td data-label="Estado">
+                            @if (item.IsActive)
+                            {
+                                <span class="ls-pill success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="ls-pill">Inactivo</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-outline-secondary" title="Editar" aria-label="Editar @item.FullName">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                @if (item.Id != me)
+                                {
+                                    <form asp-action="DeleteUser" method="post" onsubmit="return confirm('¿Eliminar el usuario @item.UserName?');">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar @item.FullName">
+                                            <i class="bi bi-trash3" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Pagination" model="Model" />

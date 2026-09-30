@@ -1,0 +1,26 @@
+@model StudyInputVM
+@{
+    ViewData["Title"] = "Nuevo estudio";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.snow.css" />
+}
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-file-earmark-plus"></i></span>
+        <div>
+            <h2>Nuevo estudio</h2>
+            <div class="ls-sub">Elige el paciente y la plantilla; el informe se rellena con ella.</div>
+        </div>
+    </div>
+</div>
+
+<partial name="_StudyForm" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.js"></script>
+    <script src="~/js/studies.js" asp-append-version="true"></script>
+}

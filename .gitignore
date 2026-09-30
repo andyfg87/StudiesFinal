@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+*.user
+
+# Base de datos SQLite local (contiene datos de pacientes)
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+
+# Credenciales del administrador inicial en desarrollo
+appsettings.Development.json
+
+# Configuración local de Claude Code
+.claude/

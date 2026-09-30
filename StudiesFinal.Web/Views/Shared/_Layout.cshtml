@@ -1,0 +1,160 @@
+@using System.Security.Claims
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
+@{
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+    var isAuth = Context.User.Identity?.IsAuthenticated == true;
+    var isAdmin = Context.User.IsInRole(Roles.Admin);
+    var clinic = Config["Clinic:Name"] ?? "StudiesFinal";
+
+    var roleValue = Context.User.FindFirst(ClaimTypes.Role)?.Value;
+    var roleLabel = Enum.TryParse<UserRole>(roleValue, out var r) ? r.RoleLabel() : "";
+
+    var fullName = Context.User.FindFirst("FullName")?.Value ?? "";
+    var initials = string.Join("", fullName
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2)
+        .Select(p => char.ToUpperInvariant(p[0])));
+
+    // aria-current precalculado (evita comillas anidadas en atributos Razor)
+    var curHome = controller == "Home" ? "page" : null;
+    var curStudies = controller == "Studies" ? "page" : null;
+    var curPatients = controller == "Patients" ? "page" : null;
+    var curTemplates = controller == "StudyTemplates" ? "page" : null;
+    var curUsers = controller == "Users" ? "page" : null;
+    var curLogs = controller == "Logs" ? "page" : null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@ViewData["Title"] · @clinic</title>
+
+    @* El tema elegido se aplica antes de pintar para que no haya parpadeo. *@
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("capoteone-theme");
+                if (saved === "light" || saved === "dark") {
+                    document.documentElement.setAttribute("data-theme", saved);
+                }
+            } catch (e) { /* sin almacenamiento: se usa el tema del sistema */ }
+        })();
+    </script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/redesign-components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@@1.11.3/font/bootstrap-icons.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    @* capote.css va después de Bootstrap para que el sistema de diseño gane donde se solapan *@
+    <link rel="stylesheet" href="~/css/capote.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/capote-list.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/studies.css" asp-append-version="true" />
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="topbar-in">
+            <a class="logo" asp-controller="Home" asp-action="Index" aria-label="@clinic">
+                <span class="sf-mark" aria-hidden="true"><i class="bi bi-heart-pulse"></i></span>
+                <span class="wm">@clinic</span>
+            </a>
+
+            @if (isAuth)
+            {
+                <nav class="nav" aria-label="Principal">
+                    <a asp-controller="Home" asp-action="Index" aria-current="@curHome">Inicio</a>
+                    <a asp-controller="Studies" asp-action="Index" aria-current="@curStudies">Estudios</a>
+                    <a asp-controller="Patients" asp-action="Index" aria-current="@curPatients">Pacientes</a>
+                    <a asp-controller="StudyTemplates" asp-action="Index" aria-current="@curTemplates">Plantillas</a>
+
+                    @if (isAdmin)
+                    {
+                        <a asp-controller="Users" asp-action="Index" aria-current="@curUsers">Usuarios</a>
+                        <a asp-controller="Logs" asp-action="Index" aria-current="@curLogs">Actividad</a>
+                    }
+                </nav>
+            }
+
+            <span class="sp"></span>
+
+            @if (isAuth)
+            {
+                <a class="who text-reset text-decoration-none" asp-controller="Account" asp-action="ChangePassword" title="Cambiar contraseña">
+                    <span class="av" aria-hidden="true">@initials</span>
+                    <span>@fullName</span>
+                    <span class="role">@roleLabel</span>
+                </a>
+            }
+
+            <button class="icon-btn" id="themeBtn" type="button" aria-label="Cambiar tema">
+                <i class="bi bi-circle-half" aria-hidden="true"></i>
+            </button>
+
+            @if (isAuth)
+            {
+                <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                    <button type="submit" class="icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </form>
+
+                <button class="icon-btn burger" id="burger" type="button"
+                        aria-label="Abrir menú" aria-expanded="false" aria-controls="drawer">
+                    <i class="bi bi-list" aria-hidden="true"></i>
+                </button>
+            }
+        </div>
+
+        @if (isAuth)
+        {
+            <nav class="drawer" id="drawer" aria-label="Menú">
+                <a asp-controller="Home" asp-action="Index" aria-current="@curHome">Inicio</a>
+                <a asp-controller="Studies" asp-action="Index" aria-current="@curStudies">Estudios</a>
+                <a asp-controller="Patients" asp-action="Index" aria-current="@curPatients">Pacientes</a>
+                <a asp-controller="StudyTemplates" asp-action="Index" aria-current="@curTemplates">Plantillas</a>
+
+                @if (isAdmin)
+                {
+                    <div class="grp">Administración</div>
+                    <a class="sub" asp-controller="Users" asp-action="Index">Usuarios</a>
+                    <a class="sub" asp-controller="Logs" asp-action="Index">Actividad</a>
+                }
+                <a class="sub" asp-controller="Account" asp-action="ChangePassword">Cambiar contraseña</a>
+            </nav>
+        }
+    </header>
+
+    <main class="container-fluid py-3 sf-main">
+        <partial name="_Alerts" />
+        @RenderBody()
+    </main>
+
+    <footer>
+        <div class="foot-in">
+            <div class="foot-legal">
+                <span>&copy; @DateTime.Now.Year @clinic</span>
+                <span class="sp"></span>
+                <span>Desarrollado por Capote Business Solutions</span>
+            </div>
+        </div>
+    </footer>
+
+    <button class="to-top" id="toTop" type="button" aria-label="Volver arriba" hidden>
+        <i class="bi bi-arrow-up" aria-hidden="true"></i>
+    </button>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/capote.js" asp-append-version="true"></script>
+    <script src="~/js/capote-list.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,202 @@
+@using StudiesFinal.Web.Paginations
+@model PaginatedList<StudyDisplayVM>
+
+@{
+    ViewData["Title"] = "Estudios";
+
+    var status = ViewBag.Status as StudyStatus?;
+    var counts = ViewBag.Counts as StudyCounts ?? new StudyCounts();
+    var studyNames = ViewBag.StudyNames as List<string> ?? new();
+
+    var q = Context.Request.Query;
+    var fSearch = q["search"].ToString();
+    var fStudy = q["studyName"].ToString();
+    var fFrom = q["from"].ToString();
+    var fTo = q["to"].ToString();
+    var hasFilters = !string.IsNullOrEmpty(fSearch) || !string.IsNullOrEmpty(fStudy) || !string.IsNullOrEmpty(fFrom) || !string.IsNullOrEmpty(fTo);
+
+    var isDoctor = User.IsInRole(Roles.Doctor);
+
+    // Pestañas: mantienen los filtros y vuelven a la página 1
+    RouteValueDictionary Tab(string s) => new RouteValueDictionary
+    {
+        ["status"] = s, ["search"] = fSearch, ["studyName"] = fStudy, ["from"] = fFrom, ["to"] = fTo
+    };
+
+    var title = status?.Label() ?? "Todos los estudios";
+}
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi @(status?.Icon() ?? "bi-file-medical")"></i></span>
+        <div>
+            <h2>Estudios · @title</h2>
+            <div class="ls-sub">@Model.TotalCount @(Model.TotalCount == 1 ? "estudio" : "estudios")</div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nuevo estudio
+        </a>
+    </div>
+</div>
+
+<!-- Fases -->
+<div class="sf-phases">
+    <a class="card ls-kpi @(status == StudyStatus.InProgress ? "is-active" : "")" href="@Url.Action("Index", Tab("InProgress"))">
+        <span class="ls-tile warning" aria-hidden="true"><i class="bi @StudyStatus.InProgress.Icon()"></i></span>
+        <div><div class="v">@counts.InProgress</div><div class="l">En progreso</div></div>
+    </a>
+    <a class="card ls-kpi @(status == StudyStatus.ToSign ? "is-active" : "")" href="@Url.Action("Index", Tab("ToSign"))">
+        <span class="ls-tile info" aria-hidden="true"><i class="bi @StudyStatus.ToSign.Icon()"></i></span>
+        <div><div class="v">@counts.ToSign</div><div class="l">Por firmar</div></div>
+    </a>
+    <a class="card ls-kpi @(status == StudyStatus.Completed ? "is-active" : "")" href="@Url.Action("Index", Tab("Completed"))">
+        <span class="ls-tile success" aria-hidden="true"><i class="bi @StudyStatus.Completed.Icon()"></i></span>
+        <div><div class="v">@counts.Completed</div><div class="l">Completados</div></div>
+    </a>
+    <a class="card ls-kpi @(status == null ? "is-active" : "")" href="@Url.Action("Index", Tab("all"))">
+        <span class="ls-tile" aria-hidden="true"><i class="bi bi-collection"></i></span>
+        <div><div class="v">@(counts.InProgress + counts.ToSign + counts.Completed)</div><div class="l">Todos</div></div>
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="status" value="@(status?.ToString() ?? "all")" />
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <label for="search" class="form-label">Paciente</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                    <input type="search" class="form-control" id="search" name="search"
+                           placeholder="Nombre, nº de paciente o nº de estudio…" value="@fSearch" />
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <label for="studyName" class="form-label">Tipo de estudio</label>
+                <select class="form-select" id="studyName" name="studyName">
+                    <option value="">Todos</option>
+                    @foreach (var n in studyNames)
+                    {
+                        <option value="@n" selected="@(n == fStudy)">@n</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-2">
+                <label for="from" class="form-label">Desde</label>
+                <input type="date" class="form-control" id="from" name="from" value="@fFrom" />
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <label for="to" class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="to" name="to" value="@fTo" />
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-1 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill" title="Filtrar">
+                    <i class="bi bi-funnel" aria-hidden="true"></i><span class="d-lg-none ms-1">Filtrar</span>
+                </button>
+                @if (hasFilters)
+                {
+                    <a href="@Url.Action("Index", new { status = status?.ToString() ?? "all" })" class="btn btn-outline-secondary" title="Limpiar filtros" aria-label="Limpiar filtros">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Listado -->
+<div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle ls-table mb-0">
+            <thead>
+                <tr>
+                    <th>@Html.SortHeader("Nº", "id")</th>
+                    <th>@Html.SortHeader("Fecha", "date")</th>
+                    <th>@Html.SortHeader("Paciente", "patient")</th>
+                    <th>@Html.SortHeader("Estudio", "study")</th>
+                    <th>Estado</th>
+                    @if (status == StudyStatus.Completed || status == null)
+                    {
+                        <th>@Html.SortHeader("Firmado", "signed")</th>
+                    }
+                    <th class="text-center">Archivos</th>
+                    <th class="text-end"><span class="visually-hidden">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50" aria-hidden="true"></i>
+                            <div class="fw-semibold">No hay estudios que coincidan</div>
+                            @if (hasFilters)
+                            {
+                                <a href="@Url.Action("Index", new { status = status?.ToString() ?? "all" })" class="small">Quitar filtros</a>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-label="Nº" class="text-muted">@item.Id</td>
+                        <td data-label="Fecha" class="text-nowrap">@item.StudyDate.ToString("MM/dd/yyyy")</td>
+                        <td data-label="Paciente">
+                            <a class="text-reset text-decoration-none fw-semibold" asp-controller="Patients" asp-action="Details" asp-route-key="@item.PatientId">@(item.PatientName ?? "(sin nombre)")</a>
+                            <div class="small text-muted">#@item.PatientId@(item.PatientAge.HasValue ? $" · {item.PatientAge} años" : "")</div>
+                        </td>
+                        <td data-label="Estudio">@item.StudyName</td>
+                        <td data-label="Estado">@Html.StatusPill(item.Status)</td>
+                        @if (status == StudyStatus.Completed || status == null)
+                        {
+                            <td data-label="Firmado" class="small">
+                                @if (item.SignedAt.HasValue)
+                                {
+                                    <div class="text-nowrap">@item.SignedAt.Value.ToString("MM/dd/yyyy")</div>
+                                    <div class="text-muted">@item.SignedByName</div>
+                                }
+                            </td>
+                        }
+                        <td data-label="Archivos" class="text-center">
+                            @foreach (var link in item.Links)
+                            {
+                                <a asp-action="OpenFile" asp-route-id="@item.Id" asp-route-slot="@link.Slot" target="_blank" rel="noopener"
+                                   class="btn btn-sm btn-link px-1" title="@link.Path" aria-label="Abrir archivo @link.Slot">
+                                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                                </a>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                @if (item.Status == StudyStatus.ToSign && isDoctor)
+                                {
+                                    <a asp-action="Details" asp-route-key="@item.Id" class="btn btn-sm btn-primary text-nowrap">
+                                        <i class="bi bi-pen me-1" aria-hidden="true"></i>Revisar
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-outline-primary text-nowrap">
+                                        Ver <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Pagination" model="Model" />

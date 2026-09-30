@@ -1,0 +1,10 @@
+@model UserInputVM
+@{
+    ViewData["Title"] = "Nuevo usuario";
+}
+
+<partial name="_UserForm" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

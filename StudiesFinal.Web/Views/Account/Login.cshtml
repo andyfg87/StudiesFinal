@@ -1,0 +1,101 @@
+@model LoginVM
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Iniciar sesión";
+    var clinic = Config["Clinic:Name"] ?? "StudiesFinal";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@ViewData["Title"] · @clinic</title>
+
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("capoteone-theme");
+                if (saved === "light" || saved === "dark") {
+                    document.documentElement.setAttribute("data-theme", saved);
+                }
+            } catch (e) { }
+        })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/capote.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/studies.css" asp-append-version="true" />
+</head>
+<body>
+
+    <div class="login-wrap">
+
+        @* Pantalla pública: no muestra ningún dato de pacientes ni de estudios. *@
+        <aside class="login-brand">
+            <span class="sf-mark" style="width:64px;height:64px;font-size:34px;border-radius:16px" aria-hidden="true"><i class="bi bi-heart-pulse"></i></span>
+            <h2>Estudios cardiológicos, de principio a fin</h2>
+            <p>Los técnicos preparan los informes, el doctor los revisa y los firma. Todo en un solo lugar.</p>
+        </aside>
+
+        <div class="login-form">
+            <form class="login-card" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
+
+                <h1>Iniciar sesión</h1>
+                <p class="lede">Accede con tu usuario de @clinic.</p>
+
+                <div asp-validation-summary="ModelOnly" class="err" role="alert"></div>
+
+                <div class="field">
+                    <label asp-for="Username">Usuario</label>
+                    <input asp-for="Username" autocomplete="username" autofocus />
+                    <span asp-validation-for="Username" class="err"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Password">Contraseña</label>
+                    <div class="pw">
+                        <input asp-for="Password" type="password" autocomplete="current-password" />
+                        <button type="button" id="pwToggle" aria-label="Mostrar contraseña">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="err"></span>
+                </div>
+
+                <label class="check">
+                    <input asp-for="RememberMe" />
+                    <span>Mantener la sesión iniciada</span>
+                </label>
+
+                <button type="submit" class="btn btn-primary" style="justify-content:center">Entrar</button>
+
+                <div class="login-foot">
+                    <span class="muted small">¿Sin acceso? Pide al administrador que te cree un usuario.</span>
+                    <span class="sp"></span>
+                    <button class="btn btn-sm" type="button" id="themeBtn" aria-label="Cambiar tema">◐</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="~/js/capote.js" asp-append-version="true"></script>
+    <script>
+        document.getElementById("pwToggle").addEventListener("click", function () {
+            var i = document.getElementById("Password");
+            i.type = i.type === "password" ? "text" : "password";
+        });
+    </script>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+</body>
+</html>

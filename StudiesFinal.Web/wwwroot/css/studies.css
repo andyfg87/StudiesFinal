@@ -1,0 +1,165 @@
+/* =========================================================================
+   studies.css — piezas propias de StudiesFinal sobre capote.css / capote-list.css
+   ========================================================================= */
+
+.sf-main { max-width: 1480px; margin: 0 auto; }
+
+/* capote.css da width:100% a todos los input (input:not([type=checkbox])…), que gana por
+   especificidad a Bootstrap y rompe los .input-group: icono, caja y botón se apilaban.
+   Se devuelve el comportamiento de Bootstrap dentro de los grupos. */
+.input-group > input.form-control:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.input-group > select.form-select {
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+.input-group { flex-wrap: nowrap; }
+
+.sf-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--brand-magenta);
+    color: #fff;
+    font-size: 17px;
+}
+
+/* ---- Pestañas de fases ---------------------------------------------------- */
+.sf-phases {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .75rem;
+    margin-bottom: 1rem;
+}
+
+    .sf-phases .ls-kpi { border: 1px solid var(--border); }
+
+.ls-tile.info {
+    background: rgba(var(--bs-info-rgb), .16);
+    color: rgb(var(--bs-info-rgb));
+}
+
+/* ---- Informe (texto enriquecido) ------------------------------------------ */
+.sf-report {
+    font-family: Calibri, "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+}
+
+    .sf-report p, .sf-report div { margin: 0 0 .35rem; }
+    .sf-report table { border-collapse: collapse; }
+    .sf-report td, .sf-report th { border: 1px solid var(--border); padding: 2px 6px; }
+
+    /* Texto enriquecido de Access: <font face="Calibri (Detail)" size="2"> = Calibri 11 pt */
+    .sf-report font { font-family: inherit; }
+    .sf-report font[size="1"] { font-size: 9pt; }
+    .sf-report font[size="2"] { font-size: 11pt; }
+    .sf-report font[size="3"] { font-size: 12pt; }
+    .sf-report font[size="4"] { font-size: 14pt; }
+    .sf-report font[size="5"] { font-size: 18pt; }
+
+/* ---- Editor Quill ---------------------------------------------------------- */
+.sf-editor { border-radius: 10px; }
+
+    .sf-editor .ql-toolbar.ql-snow {
+        border-color: var(--border);
+        border-radius: 10px 10px 0 0;
+        background: var(--surface-2);
+    }
+
+    .sf-editor .ql-container.ql-snow {
+        border-color: var(--border);
+        border-radius: 0 0 10px 10px;
+        background: var(--surface);
+        font-family: Calibri, "Segoe UI", Arial, sans-serif;
+        font-size: 15px;
+    }
+
+    .sf-editor .ql-editor { min-height: 380px; color: var(--ink); }
+
+    .sf-editor .ql-snow .ql-stroke { stroke: var(--ink-2); }
+    .sf-editor .ql-snow .ql-fill { fill: var(--ink-2); }
+    .sf-editor .ql-snow .ql-picker { color: var(--ink-2); }
+    .sf-editor .ql-snow .ql-picker-options { background: var(--surface); }
+
+.sf-editor.is-readonly .ql-toolbar { display: none; }
+
+/* ---- Selector de paciente --------------------------------------------------- */
+.sf-picker { position: relative; }
+
+    .sf-picker .sf-results {
+        position: absolute;
+        z-index: 20;
+        inset: 100% 0 auto 0;
+        max-height: 320px;
+        overflow: auto;
+        margin-top: 4px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: var(--pop);
+    }
+
+        .sf-picker .sf-results button {
+            display: flex;
+            gap: .75rem;
+            width: 100%;
+            border: 0;
+            background: none;
+            text-align: left;
+            padding: .5rem .75rem;
+            color: var(--ink);
+        }
+
+            .sf-picker .sf-results button:hover,
+            .sf-picker .sf-results button:focus { background: var(--surface-2); }
+
+        .sf-picker .sf-results .id { font-variant-numeric: tabular-nums; color: var(--ink-3); min-width: 4.5rem; }
+
+/* ---- Archivos -------------------------------------------------------------- */
+.sf-file {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    word-break: break-all;
+}
+
+    .sf-file:hover { background: var(--surface-2); color: inherit; }
+    .sf-file i { font-size: 1.3rem; color: var(--crit); flex: none; }
+
+/* ---- Firma ----------------------------------------------------------------- */
+.sf-signature {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    border-radius: 10px;
+    background: var(--ok-bg);
+    color: var(--ok);
+}
+
+.sf-locked {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .9rem;
+    opacity: .8;
+}
+
+.sf-sticky-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    padding: .75rem 0;
+    background: linear-gradient(to top, var(--app-bg) 70%, transparent);
+}

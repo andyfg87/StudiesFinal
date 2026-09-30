@@ -1,0 +1,91 @@
+@model StudyCounts
+@{
+    ViewData["Title"] = "Inicio";
+    var recent = ViewBag.Recent as List<StudyDisplayVM> ?? new();
+    var isDoctor = User.IsInRole(Roles.Doctor);
+    var name = User.FullName();
+}
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-heart-pulse"></i></span>
+        <div>
+            <h2>Hola, @name</h2>
+            <div class="ls-sub">@DateTime.Today.ToString("dddd, d 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-controller="Studies" asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nuevo estudio
+        </a>
+        @if (isDoctor && Model.ToSign > 0)
+        {
+            <a asp-controller="Studies" asp-action="Index" asp-route-status="ToSign" class="btn btn-outline-primary">
+                <i class="bi bi-pen me-1" aria-hidden="true"></i>Firmar pendientes (@Model.ToSign)
+            </a>
+        }
+    </div>
+</div>
+
+<div class="sf-phases">
+    <a class="card ls-kpi" asp-controller="Studies" asp-action="Index" asp-route-status="InProgress">
+        <span class="ls-tile warning" aria-hidden="true"><i class="bi @StudyStatus.InProgress.Icon()"></i></span>
+        <div><div class="v">@Model.InProgress</div><div class="l">En progreso</div></div>
+    </a>
+    <a class="card ls-kpi" asp-controller="Studies" asp-action="Index" asp-route-status="ToSign">
+        <span class="ls-tile info" aria-hidden="true"><i class="bi @StudyStatus.ToSign.Icon()"></i></span>
+        <div><div class="v">@Model.ToSign</div><div class="l">Por firmar</div></div>
+    </a>
+    <a class="card ls-kpi" asp-controller="Studies" asp-action="Index" asp-route-status="Completed">
+        <span class="ls-tile success" aria-hidden="true"><i class="bi @StudyStatus.Completed.Icon()"></i></span>
+        <div><div class="v">@Model.Completed</div><div class="l">Completados</div></div>
+    </a>
+    <a class="card ls-kpi" asp-controller="Studies" asp-action="Index" asp-route-status="all" asp-route-from="@DateTime.Today.ToString("yyyy-MM-dd")" asp-route-to="@DateTime.Today.ToString("yyyy-MM-dd")">
+        <span class="ls-tile" aria-hidden="true"><i class="bi bi-calendar-day"></i></span>
+        <div><div class="v">@Model.Today</div><div class="l">Estudios de hoy</div></div>
+    </a>
+    <a class="card ls-kpi" asp-controller="Patients" asp-action="Index">
+        <span class="ls-tile" aria-hidden="true"><i class="bi bi-people"></i></span>
+        <div><div class="v">@Model.Patients</div><div class="l">Pacientes</div></div>
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body pb-0">
+        <h3 class="h6 mb-0"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Trabajo abierto (últimos movimientos)</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle ls-table mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Paciente</th>
+                    <th>Estudio</th>
+                    <th>Estado</th>
+                    <th class="text-end"><span class="visually-hidden">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!recent.Any())
+                {
+                    <tr><td colspan="5" class="text-center py-4 text-muted">No hay estudios abiertos.</td></tr>
+                }
+                @foreach (var s in recent)
+                {
+                    <tr>
+                        <td data-label="Fecha" class="text-nowrap">@s.StudyDate.ToString("MM/dd/yyyy")</td>
+                        <td data-label="Paciente">@s.PatientName <span class="text-muted small">#@s.PatientId</span></td>
+                        <td data-label="Estudio">@s.StudyName</td>
+                        <td data-label="Estado">@Html.StatusPill(s.Status)</td>
+                        <td class="text-end">
+                            <a asp-controller="Studies" asp-action="Details" asp-route-key="@s.Id" class="btn btn-sm btn-outline-primary text-nowrap">
+                                Abrir <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

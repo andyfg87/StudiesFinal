@@ -1,0 +1,259 @@
+@model StudyDisplayVM
+@inject StudiesFinal.Web.Services.IRichTextSanitizer Sanitizer
+
+@{
+    ViewData["Title"] = $"Estudio {Model.Id}";
+
+    bool canEdit = ViewBag.CanEdit == true;
+    bool canSendToSign = ViewBag.CanSendToSign == true;
+    bool canReturn = ViewBag.CanReturn == true;
+    bool canSign = ViewBag.CanSign == true;
+    bool canUnlock = ViewBag.CanUnlock == true;
+    bool canDelete = ViewBag.CanDelete == true;
+}
+
+<nav class="crumbs" aria-label="Migas">
+    <a asp-action="Index" asp-route-status="@Model.Status">Estudios · @Model.Status.Label()</a> /
+    <span>Nº @Model.Id</span>
+</nav>
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-file-medical"></i></span>
+        <div>
+            <h2>@(Model.StudyName ?? "Estudio")</h2>
+            <div class="ls-sub">
+                <a class="text-reset" asp-controller="Patients" asp-action="Details" asp-route-key="@Model.PatientId">@Model.PatientName</a>
+                · #@Model.PatientId · @Model.StudyDate.ToString("MM/dd/yyyy")
+            </div>
+        </div>
+        @Html.StatusPill(Model.Status)
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="Print" asp-route-id="@Model.Id" target="_blank" rel="noopener" class="btn btn-outline-secondary">
+            <i class="bi bi-printer me-1" aria-hidden="true"></i>Imprimir
+        </a>
+
+        @if (canEdit)
+        {
+            <a asp-action="Edit" asp-route-key="@Model.Id" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+            </a>
+        }
+
+        @if (canSendToSign)
+        {
+            <form asp-action="SendToSign" asp-route-id="@Model.Id" method="post">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-1" aria-hidden="true"></i>Enviar a firmar
+                </button>
+            </form>
+        }
+
+        @if (canReturn)
+        {
+            <form asp-action="ReturnToProgress" asp-route-id="@Model.Id" method="post">
+                <button type="submit" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Devolver a técnicos
+                </button>
+            </form>
+        }
+
+        @if (canSign)
+        {
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signModal">
+                <i class="bi bi-pen me-1" aria-hidden="true"></i>Firmar
+            </button>
+        }
+
+        @if (canUnlock)
+        {
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unlockModal">
+                <i class="bi bi-unlock me-1" aria-hidden="true"></i>Desbloquear
+            </button>
+        }
+
+        @if (canDelete)
+        {
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" title="Eliminar" aria-label="Eliminar">
+                <i class="bi bi-trash3" aria-hidden="true"></i>
+            </button>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-xl-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                @if (string.IsNullOrWhiteSpace(Model.Information))
+                {
+                    <p class="text-muted mb-0">El informe está vacío.</p>
+                }
+                else
+                {
+                    <div class="sf-report">@Sanitizer.Render(Model.Information)</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        @if (Model.Status == StudyStatus.Completed)
+        {
+            <div class="sf-signature mb-3">
+                <i class="bi bi-patch-check-fill fs-3" aria-hidden="true"></i>
+                <div>
+                    <div class="fw-semibold">Firmado@(string.IsNullOrEmpty(Model.SignedByName) ? "" : $" por {Model.SignedByName}")</div>
+                    <div class="small">@Model.SignedAt?.ToString("MM/dd/yyyy h:mm tt")</div>
+                </div>
+            </div>
+            <div class="sf-locked mb-3"><i class="bi bi-lock" aria-hidden="true"></i>Bloqueado: solo el doctor puede desbloquearlo para editar.</div>
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h3 class="h6">Informe firmado (PDF)</h3>
+                    @if (!string.IsNullOrEmpty(Model.SignedPdfPath))
+                    {
+                        <a class="sf-file" asp-action="OpenFile" asp-route-id="@Model.Id" asp-route-slot="0" target="_blank" rel="noopener" title="@Model.SignedPdfPath">
+                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                            <span class="small">@System.IO.Path.GetFileName(Model.SignedPdfPath)</span>
+                        </a>
+                        <div class="small text-muted mt-1 text-break">@System.IO.Path.GetDirectoryName(Model.SignedPdfPath)</div>
+                    }
+                    else
+                    {
+                        <p class="small text-muted mb-2">Todavía no se ha guardado el PDF en el servidor.</p>
+                    }
+
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <a asp-action="Pdf" asp-route-id="@Model.Id" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Ver PDF
+                        </a>
+                        @if (User.IsInRole(Roles.Doctor) || User.IsInRole(Roles.Admin))
+                        {
+                            <form asp-action="GeneratePdf" asp-route-id="@Model.Id" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>@(string.IsNullOrEmpty(Model.SignedPdfPath) ? "Generar PDF" : "Volver a generar")
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h3 class="h6">Archivos</h3>
+                @if (!Model.Links.Any())
+                {
+                    <p class="text-muted small mb-0">Sin archivos enlazados.</p>
+                }
+                <div class="d-grid gap-2">
+                    @foreach (var link in Model.Links)
+                    {
+                        <a class="sf-file" asp-action="OpenFile" asp-route-id="@Model.Id" asp-route-slot="@link.Slot" target="_blank" rel="noopener" title="@link.Path">
+                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                            <span class="small">@System.IO.Path.GetFileName(link.Path)</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="h6">Datos</h3>
+                <dl class="row small mb-0">
+                    <dt class="col-5">Nº estudio</dt><dd class="col-7">@Model.Id</dd>
+                    <dt class="col-5">Paciente</dt><dd class="col-7">@Model.PatientName (#@Model.PatientId)</dd>
+                    <dt class="col-5">Edad</dt><dd class="col-7">@(Model.PatientAge?.ToString() ?? "—")</dd>
+                    <dt class="col-5">Nacimiento</dt><dd class="col-7">@(Model.PatientDateOfBirth?.ToString("MM/dd/yyyy") ?? "—")</dd>
+                    <dt class="col-5">Procesado</dt><dd class="col-7">@(Model.Processed ? "Sí" : "No")</dd>
+                    <dt class="col-5">Creado</dt><dd class="col-7">@Model.CreatedAt.ToString("MM/dd/yyyy") @(string.IsNullOrEmpty(Model.CreatedByName) ? "" : $"· {Model.CreatedByName}")</dd>
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <dt class="col-5">Modificado</dt>
+                        <dd class="col-7">@Model.UpdatedAt.Value.ToString("MM/dd/yyyy h:mm tt") · @Model.UpdatedByName</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (canSign)
+{
+    <div class="modal fade" id="signModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Firmar estudio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    Al firmar, el estudio pasa a <strong>Completado</strong> y queda bloqueado.
+                    Solo tú podrás desbloquearlo después.
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form asp-action="Sign" asp-route-id="@Model.Id" method="post">
+                        <button type="submit" class="btn btn-outline-success">Firmar</button>
+                    </form>
+                    <form asp-action="Sign" asp-route-id="@Model.Id" asp-route-next="true" method="post">
+                        <button type="submit" class="btn btn-success">Firmar y siguiente</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canUnlock)
+{
+    <div class="modal fade" id="unlockModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" asp-action="Unlock" asp-route-id="@Model.Id" method="post">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger">Desbloquear estudio firmado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Se quitará la firma y el estudio volverá a <strong>Por firmar</strong> para poder editarlo. Habrá que firmarlo de nuevo.</p>
+                    <label for="reason" class="form-label">Motivo (queda en el registro de actividad)</label>
+                    <textarea id="reason" name="reason" class="form-control" rows="2" maxlength="500"></textarea>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Desbloquear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@if (canDelete)
+{
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger">Eliminar estudio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Seguro que deseas eliminar el estudio <strong>@Model.Id</strong> de <strong>@Model.PatientName</strong>?
+                    <br />Esta acción no se puede deshacer. Los archivos del servidor no se borran.
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form asp-action="DeleteStudy" asp-route-id="@Model.Id" method="post">
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

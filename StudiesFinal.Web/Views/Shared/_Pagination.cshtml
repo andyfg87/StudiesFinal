@@ -1,0 +1,87 @@
+@using StudiesFinal.Web.Interface
+@model IPaginatedList
+
+@{
+    var currentPageSize = Model.PageSize;
+    var routeValues = Model.RouteValues ?? new RouteValueDictionary();
+    var pageSizeOptions = new[] { 10, 20, 50, 100 };
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+
+    var linkRouteValues = new RouteValueDictionary(routeValues);
+    linkRouteValues.Remove("pageNumber");
+    linkRouteValues.Remove("pageSize");
+
+    string PageUrl(int page)
+    {
+        var rv = new RouteValueDictionary(linkRouteValues) { ["pageNumber"] = page, ["pageSize"] = currentPageSize == int.MaxValue ? 0 : currentPageSize };
+        return Url.Action(action, rv) ?? "#";
+    }
+
+    int totalPages = Model.TotalPages;
+    int currentPage = Model.PageIndex;
+    int startPage = Math.Max(1, currentPage - 2);
+    int endPage = Math.Min(totalPages, currentPage + 2);
+}
+
+<nav aria-label="Paginación" class="sf-pager">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <div class="page-size-selector small">
+            <span class="me-2">Mostrar:</span>
+            <select class="form-select form-select-sm d-inline-block" style="width:auto" onchange="changePageSize(this.value)">
+                @foreach (var size in pageSizeOptions)
+                {
+                    <option value="@size" selected="@(size == currentPageSize)">@size</option>
+                }
+                <option value="0" selected="@(currentPageSize == int.MaxValue)">Todos</option>
+            </select>
+            <span class="ms-2">de @Model.TotalCount registros</span>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <ul class="pagination pagination-sm mb-0">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item"><a class="page-link" href="@PageUrl(currentPage - 1)">Anterior</a></li>
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item"><a class="page-link" href="@PageUrl(1)">1</a></li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")"><a class="page-link" href="@PageUrl(i)">@i</a></li>
+                }
+
+                @if (endPage < totalPages)
+                {
+                    @if (endPage < totalPages - 1)
+                    {
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    }
+                    <li class="page-item"><a class="page-link" href="@PageUrl(totalPages)">@totalPages</a></li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item"><a class="page-link" href="@PageUrl(currentPage + 1)">Siguiente</a></li>
+                }
+            </ul>
+        }
+    </div>
+</nav>
+
+<script>
+    function changePageSize(pageSize) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('pageSize', pageSize);
+        urlParams.set('pageNumber', 1);
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
+</script>

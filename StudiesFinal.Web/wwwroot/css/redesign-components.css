@@ -1,0 +1,145 @@
+﻿/* ========== REDISEÑO DE COMPONENTES ========== */
+/* Botones */
+.btn {
+    border-radius: var(--radius-button);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+    .btn-primary:hover {
+        background-color: var(--color-accent);
+        border-color: #152259;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-hover);
+    }
+
+.btn-outline-primary {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+
+.btn-danger {
+    background-color: var(--color-error);
+    border-color: var(--color-error);
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+/* Tarjetas */
+.card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+    }
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+
+/* Tablas */
+/* Tablas - Versión corregida */
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: var(--color-surface-alt);
+    --bs-table-hover-bg: rgba(27,31,110,0.03);
+}
+
+    /* Estilo para el header oscuro (table-dark) */
+    .table-dark thead th,
+    .table thead th {
+        background-color: var(--color-primary) !important; /* Navy */
+        color: white !important;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--color-border);
+        padding: 0.75rem 1rem;
+    }
+
+        /* Para cuando NO se usa table-dark (por si acaso) */
+        .table thead th:not(.table-dark) {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+    /* Celdas normales */
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--color-border);
+        color: var(--color-text-primary);
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(27,31,110,0.02);
+    }
+
+/* Badges */
+.badge {
+    border-radius: var(--radius-badge);
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.7rem;
+}
+
+    .badge.bg-success {
+        background-color: var(--color-success) !important;
+    }
+
+    .badge.bg-warning {
+        background-color: var(--color-warning) !important;
+    }
+
+    .badge.bg-danger {
+        background-color: var(--color-error) !important;
+    }
+
+    .badge.bg-info {
+        background-color: var(--color-cyan) !important;
+    }
+
+/* Formularios */
+.form-control, .form-select {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-input);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(27,31,110,0.1);
+    }
+
+.form-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.25rem;
+}

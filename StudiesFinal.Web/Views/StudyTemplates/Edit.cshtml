@@ -1,0 +1,27 @@
+@model StudyTemplateInputVM
+@{
+    ViewData["Title"] = "Editar plantilla";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.snow.css" />
+}
+
+<nav class="crumbs" aria-label="Migas">
+    <a asp-action="Index">Plantillas</a> / <span>Editar plantilla</span>
+</nav>
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
+        <h2>Editar plantilla</h2>
+    </div>
+</div>
+
+<partial name="_TemplateForm" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.js"></script>
+    <script src="~/js/studies.js" asp-append-version="true"></script>
+}

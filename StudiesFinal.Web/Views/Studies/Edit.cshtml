@@ -1,0 +1,32 @@
+@model StudyInputVM
+@{
+    ViewData["Title"] = $"Editar estudio {Model.Id}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.snow.css" />
+}
+
+<nav class="crumbs" aria-label="Migas">
+    <a asp-action="Index" asp-route-status="@Model.Status">Estudios · @Model.Status.Label()</a> /
+    <a asp-action="Details" asp-route-key="@Model.Id">Nº @Model.Id</a> /
+    <span>Editar</span>
+</nav>
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-pencil-square"></i></span>
+        <div>
+            <h2>Editar estudio</h2>
+            <div class="ls-sub">@Model.PatientLabel</div>
+        </div>
+    </div>
+</div>
+
+<partial name="_StudyForm" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.js"></script>
+    <script src="~/js/studies.js" asp-append-version="true"></script>
+}

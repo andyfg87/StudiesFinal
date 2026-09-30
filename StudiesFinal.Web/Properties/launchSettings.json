@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "StudiesFinal.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:9854;http://localhost:9855"
+    }
+  }
+}

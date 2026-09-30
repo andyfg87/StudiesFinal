@@ -1,0 +1,10 @@
+@*
+    Editor de texto enriquecido (Quill) ligado a un <input type="hidden">.
+    Uso: <partial name="_RichEditor" model="@("Information")" />
+    donde el modelo es el id/name del campo oculto que guarda el HTML.
+*@
+@model string
+
+<div class="sf-editor" data-rich-editor="@Model">
+    <div class="sf-editor-body"></div>
+</div>

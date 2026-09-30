@@ -1,0 +1,139 @@
+@model StudyDisplayVM
+@inject StudiesFinal.Web.Services.IRichTextSanitizer Sanitizer
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
+@*
+    Informe impreso con el mismo formato que el de Access (HR-*.pdf):
+    logo + cabecera del médico, datos del paciente en negrita, informe y,
+    al pie de la página, la firma electrónica con "Final Report" y la fecha.
+*@
+@{
+    Layout = null;
+    var report = Config.GetSection("Report");
+    var us = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+    var signed = Model.Status == StudyStatus.Completed;
+
+    // Las firmas importadas de Access no tienen usuario: firmó el médico por defecto
+    var signer = Model.SignedById.HasValue && !string.IsNullOrWhiteSpace(Model.SignedByName)
+        ? Model.SignedByName
+        : report["DefaultSigner"];
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@Model.PatientName-@Model.StudyDate.ToString("MM-dd-yyyy") · @Model.StudyName</title>
+    <style>
+        @@page { size: letter; margin: 9mm 10mm 28mm 10mm; }
+
+        * { box-sizing: border-box; }
+        html, body { margin: 0; background: #e9e9ee; }
+        body { font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif; color: #000; font-size: 11pt; }
+
+        /* En pantalla se ve como una hoja carta */
+        .sheet {
+            width: 215.9mm;
+            min-height: 279.4mm;
+            margin: 12px auto 24px;
+            padding: 9mm 10mm 28mm;
+            background: #fff;
+            box-shadow: 0 2px 14px rgba(0,0,0,.18);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---- Cabecera ---- */
+        .hdr { display: grid; grid-template-columns: 34mm 1fr; align-items: start; }
+        .hdr img { width: 32mm; height: auto; margin-left: 4.5mm; }
+        .hdr .doc { text-align: center; padding-top: 1.5mm; padding-right: 12mm; line-height: 1.55; }
+        .hdr .doc .n { font-weight: 700; font-size: 14pt; }
+        .hdr .doc .l { font-size: 12pt; }
+
+        /* ---- Paciente ---- */
+        .pt { margin: 7mm 0 0; border-collapse: collapse; font-weight: 700; font-size: 11pt; }
+        .pt td { padding: 0 0 4.2mm; vertical-align: top; }
+        .pt td.l { width: 22mm; }
+        .pt tr:last-child td { padding-bottom: 3mm; }
+
+        /* ---- Informe ---- */
+        .report { line-height: 1.2; overflow-wrap: anywhere; }
+        .report p, .report div { margin: 0; }
+        .report table { border-collapse: collapse; }
+        .report td, .report th { padding: 1px 4px; }
+        /* Texto enriquecido de Access: <font face="Calibri (Detail)" size="2"> = Calibri 11 pt */
+        .report font { font-family: inherit; }
+        .report font[size="1"] { font-size: 9pt; }
+        .report font[size="2"] { font-size: 11pt; }
+        .report font[size="3"] { font-size: 12pt; }
+        .report font[size="4"] { font-size: 14pt; }
+        .report font[size="5"] { font-size: 18pt; }
+
+        /* ---- Firma (al pie de la última página) ---- */
+        .sig { margin-top: auto; padding-top: 10mm; display: grid; grid-template-columns: 1fr auto; align-items: end; break-inside: avoid; page-break-inside: avoid; }
+        .sig .by { font-style: italic; color: #7f7f7f; padding: 0 0 1.5mm 1mm; border-bottom: 1px solid #d0d0d0; width: 123mm; }
+        .sig .who { font-weight: 700; font-size: 14pt; line-height: 1.55; padding-top: 1mm; }
+        .sig .who .t { margin-left: -2mm; }
+        .sig .final { font-weight: 700; font-size: 14pt; padding: 0 30mm 3mm 0; }
+        .sig .when { grid-column: 1 / -1; text-align: right; font-style: italic; color: #7f7f7f; padding-top: 5mm; }
+        .draft { color: #b00000; }
+
+        /* ---- Barra de herramientas (solo pantalla) ---- */
+        .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; justify-content: center; padding: 10px; background: #2b2a45; }
+        .toolbar button { font: 600 14px "Segoe UI", Arial, sans-serif; padding: 7px 16px; border-radius: 7px; border: 0; cursor: pointer; }
+        .toolbar .p { background: #ff017b; color: #fff; }
+
+        @@media print {
+            html, body { background: #fff; }
+            .toolbar { display: none; }
+            .sheet { width: auto; margin: 0; padding: 0; box-shadow: none; min-height: calc(279.4mm - 39mm); }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="p" type="button" onclick="window.print()">Imprimir</button>
+        <button type="button" onclick="window.close()">Cerrar</button>
+    </div>
+
+    <div class="sheet">
+        <header class="hdr">
+            <img src="@Url.Content(report["Logo"] ?? "~/img/report-logo.png")" alt="" />
+            <div class="doc">
+                <div class="n">@report["PhysicianName"]</div>
+                <div class="n">@report["HeaderTitle"]</div>
+                <div class="l">@report["Address"]</div>
+                <div class="l">Phone: @report["Phone"]&nbsp;&nbsp;&nbsp;&nbsp; Fax: @report["Fax"]</div>
+            </div>
+        </header>
+
+        <table class="pt">
+            <tr><td class="l">Patient:</td><td>@Model.PatientName</td></tr>
+            <tr><td class="l">D.O.B:</td><td>@Model.PatientDateOfBirth?.ToString("d-MMM-yy", us)</td></tr>
+            <tr><td class="l">Study Date:</td><td>@Model.StudyDate.ToString("MM/dd/yyyy", us)</td></tr>
+            <tr><td class="l">Test:</td><td>@Model.StudyName</td></tr>
+        </table>
+
+        <div class="report">@Sanitizer.Render(Model.Information)</div>
+
+        <footer class="sig">
+            <div>
+                @if (signed)
+                {
+                    <div class="by">Electronically signed by: @signer</div>
+                }
+                else
+                {
+                    <div class="by draft">Not signed</div>
+                }
+                <div class="who">
+                    <div>@report["PhysicianName"]</div>
+                    <div class="t">@report["SignatureTitle"]</div>
+                </div>
+            </div>
+            <div class="final @(signed ? "" : "draft")">@(signed ? "Final Report" : "Preliminary Report")</div>
+            <div class="when">@(signed ? Model.SignedAt?.ToString("M/d/yyyy h:mm:ss tt", us) : "")</div>
+        </footer>
+    </div>
+</body>
+</html>
