@@ -3,6 +3,9 @@ using StudiesFinal.Models.Entities;
 
 namespace StudiesFinal.Models.EF
 {
+    /// <summary>
+    /// Contexto de la aplicación (SQL Server: LocalDB en desarrollo, SQL Server en el servidor).
+    /// </summary>
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -21,8 +24,8 @@ namespace StudiesFinal.Models.EF
             // Configuración de USER
             modelBuilder.Entity<User>(entity =>
             {
+                // Único y, con la collation por defecto de SQL Server, sin distinguir mayúsculas
                 entity.HasIndex(u => u.Username).IsUnique();
-                entity.Property(u => u.Username).UseCollation("NOCASE");
                 entity.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
                 entity.Ignore(u => u.FullName);
             });

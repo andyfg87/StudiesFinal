@@ -3,7 +3,7 @@ obj/
 .vs/
 *.user
 
-# Base de datos SQLite local (contiene datos de pacientes)
+# Copias locales de bases de datos (contienen datos de pacientes)
 App_Data/
 *.db
 *.db-shm

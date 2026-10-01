@@ -15,16 +15,16 @@ namespace StudiesFinal.Models.EF.Migrations
                 name: "ApplicationLogs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Level = table.Column<string>(type: "TEXT", nullable: false),
-                    Message = table.Column<string>(type: "TEXT", nullable: false),
-                    Logger = table.Column<string>(type: "TEXT", nullable: true),
-                    Exception = table.Column<string>(type: "TEXT", nullable: true),
-                    User = table.Column<string>(type: "TEXT", nullable: false),
-                    Action = table.Column<string>(type: "TEXT", nullable: true),
-                    Parameters = table.Column<string>(type: "TEXT", nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Level = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Logger = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Exception = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    User = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Parameters = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -35,9 +35,9 @@ namespace StudiesFinal.Models.EF.Migrations
                 name: "Patients",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    DateOfBirth = table.Column<DateTime>(type: "TEXT", nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,11 +48,11 @@ namespace StudiesFinal.Models.EF.Migrations
                 name: "StudyTemplates",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    StudyTitle = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    StudyInfo = table.Column<string>(type: "TEXT", nullable: true),
-                    GenericName = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudyTitle = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    StudyInfo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GenericName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -63,13 +63,13 @@ namespace StudiesFinal.Models.EF.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Username = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false, collation: "NOCASE"),
-                    PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
-                    FirstName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    LastName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Role = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Username = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -80,24 +80,25 @@ namespace StudiesFinal.Models.EF.Migrations
                 name: "Studies",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    StudyDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    StudyName = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
-                    Information = table.Column<string>(type: "TEXT", nullable: true),
-                    PatientId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Processed = table.Column<bool>(type: "INTEGER", nullable: false),
-                    LinkFile1 = table.Column<string>(type: "TEXT", maxLength: 400, nullable: true),
-                    LinkFile2 = table.Column<string>(type: "TEXT", maxLength: 400, nullable: true),
-                    LinkFile3 = table.Column<string>(type: "TEXT", maxLength: 400, nullable: true),
-                    SignedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    SignedById = table.Column<Guid>(type: "TEXT", nullable: true),
-                    SignedByName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CreatedByName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    UpdatedByName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudyDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StudyName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Information = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Processed = table.Column<bool>(type: "bit", nullable: false),
+                    LinkFile1 = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
+                    LinkFile2 = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
+                    LinkFile3 = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
+                    SignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SignedById = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SignedByName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    SignedPdfPath = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedByName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedByName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {

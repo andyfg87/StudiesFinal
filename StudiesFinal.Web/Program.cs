@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using StudiesFinal.Models.EF;
 using StudiesFinal.Models.Entities;
@@ -12,14 +11,13 @@ using StudiesFinal.Web.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// SQLite: una ruta relativa se resuelve contra la carpeta del proyecto/publicación,
-// no contra el directorio desde el que se arranca el proceso.
-var sqlite = new SqliteConnectionStringBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
-if (!Path.IsPathRooted(sqlite.DataSource))
-    sqlite.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqlite.DataSource);
+// SQL Server: LocalDB en desarrollo (appsettings.json) y SERVER01\SQLEXPRESS en el
+// servidor (appsettings.Production.json).
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection en appsettings.json.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(sqlite.ToString()));
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");

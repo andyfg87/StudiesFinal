@@ -17,11 +17,7 @@ namespace StudiesFinal.Web.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
 
-            var dataDir = Path.GetDirectoryName(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(
-                context.Database.GetConnectionString()).DataSource);
-            if (!string.IsNullOrEmpty(dataDir))
-                Directory.CreateDirectory(dataDir);
-
+            // Crea la base si no existe y aplica las migraciones pendientes
             await context.Database.MigrateAsync();
 
             if (await context.Users.AnyAsync())
