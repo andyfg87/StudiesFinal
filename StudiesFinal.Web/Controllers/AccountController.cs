@@ -58,13 +58,13 @@ namespace StudiesFinal.Web.Controllers
             if (user == null || !user.IsActive ||
                 _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password) == PasswordVerificationResult.Failed)
             {
-                await _logger.LogWarning("Intento de acceso fallido", nameof(AccountController), nameof(Login), new { model.Username });
-                ModelState.AddModelError(string.Empty, "Usuario o contraseña incorrectos");
+                await _logger.LogWarning("Failed sign-in attempt", nameof(AccountController), nameof(Login), new { model.Username });
+                ModelState.AddModelError(string.Empty, "Invalid username or password");
                 return View(model);
             }
 
             await SignInUser(user, model.RememberMe);
-            await _logger.LogInformation("Entrada al sistema", nameof(AccountController), nameof(Login), new { user.Username, Role = user.Role.ToString() });
+            await _logger.LogInformation("Signed in", nameof(AccountController), nameof(Login), new { user.Username, Role = user.Role.ToString() });
 
             return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/");
         }
@@ -101,15 +101,15 @@ namespace StudiesFinal.Web.Controllers
 
             if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.CurrentPassword) == PasswordVerificationResult.Failed)
             {
-                ModelState.AddModelError(nameof(model.CurrentPassword), "La contraseña actual no es correcta");
+                ModelState.AddModelError(nameof(model.CurrentPassword), "The current password is incorrect");
                 return View(model);
             }
 
             user.PasswordHash = _passwordHasher.HashPassword(user, model.NewPassword);
             await _userRepo.SaveChangesAsync();
-            await _logger.LogInformation("Cambio de contraseña", nameof(AccountController), nameof(ChangePassword));
+            await _logger.LogInformation("Password changed", nameof(AccountController), nameof(ChangePassword));
 
-            TempData["Success"] = "Contraseña actualizada.";
+            TempData["Success"] = "Password updated.";
             return RedirectToAction("Index", "Home");
         }
 

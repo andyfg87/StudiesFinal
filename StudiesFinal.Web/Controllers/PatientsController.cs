@@ -29,6 +29,7 @@ namespace StudiesFinal.Web.Controllers
         public override async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20, string sortBy = "name", string sortOrder = "asc")
         {
             var search = Request.Query["search"].ToString().Trim();
+            DateTime? dob = DateTime.TryParse(Request.Query["dob"], out var b) ? b.Date : null;
             var query = await _repository.GetAll();
 
             if (!string.IsNullOrEmpty(search))
@@ -38,6 +39,9 @@ namespace StudiesFinal.Web.Controllers
                 else
                     query = query.Where(p => EF.Functions.Like(p.Name!, $"%{search}%"));
             }
+
+            if (dob.HasValue)
+                query = query.Where(p => p.DateOfBirth >= dob.Value && p.DateOfBirth < dob.Value.AddDays(1));
 
             // Proyección directa: cuenta los estudios sin cargarlos
             var projected = query.Select(p => new PatientDisplayVM
@@ -59,7 +63,10 @@ namespace StudiesFinal.Web.Controllers
                 _ => desc ? projected.OrderByDescending(p => p.Name) : projected.OrderBy(p => p.Name)
             };
 
-            var routeValues = new RouteValueDictionary { ["search"] = search, ["sortBy"] = sortBy, ["sortOrder"] = sortOrder };
+            var routeValues = new RouteValueDictionary
+            {
+                ["search"] = search, ["dob"] = dob?.ToString("yyyy-MM-dd"), ["sortBy"] = sortBy, ["sortOrder"] = sortOrder
+            };
             ViewBag.CurrentSortBy = sortBy;
             ViewBag.CurrentSortOrder = sortOrder;
             ViewBag.RouteValues = routeValues;
@@ -98,7 +105,7 @@ namespace StudiesFinal.Web.Controllers
         public override async Task<IActionResult> Create(PatientInputVM model)
         {
             if (await _repository.GetByIdAsync(model.Id) != null)
-                ModelState.AddModelError(nameof(model.Id), "Ya existe un paciente con ese número");
+                ModelState.AddModelError(nameof(model.Id), "A patient with that number already exists");
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -107,7 +114,7 @@ namespace StudiesFinal.Web.Controllers
             await _repository.SaveChangesAsync();
             await LogInformation(nameof(Create), model);
 
-            TempData["Success"] = "Paciente creado.";
+            TempData["Success"] = "Patient created.";
 
             // Si venía del alta de un estudio, vuelve allí con el paciente elegido
             if (Request.Query["returnToStudy"] == "1")
@@ -132,7 +139,7 @@ namespace StudiesFinal.Web.Controllers
             await _repository.SaveChangesAsync();
             await LogInformation(nameof(Edit), model);
 
-            TempData["Success"] = "Paciente actualizado.";
+            TempData["Success"] = "Patient updated.";
             return RedirectToAction(nameof(Details), new { key = model.Id });
         }
 
@@ -144,19 +151,24 @@ namespace StudiesFinal.Web.Controllers
             var hasStudies = await (await _studyRepository.GetAll(s => s.PatientId == id)).AnyAsync();
             if (hasStudies)
             {
-                TempData["Error"] = "No se puede eliminar el paciente porque tiene estudios.";
+                TempData["Error"] = "The patient cannot be deleted because they have studies.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
             await _repository.DeleteAsync(id);
             await _repository.SaveChangesAsync();
-            await _logger.LogInformation($"Paciente eliminado: {id}", nameof(PatientsController), nameof(DeletePatient));
+            await _logger.LogInformation($"Patient deleted: {id}", nameof(PatientsController), nameof(DeletePatient));
 
-            TempData["Success"] = "Paciente eliminado.";
+            TempData["Success"] = "Patient deleted.";
             return RedirectToAction(nameof(Index));
         }
 
-        /// <summary>Búsqueda para el selector de paciente (JSON).</summary>
+        private static readonly string[] DobFormats = { "MM/dd/yyyy", "M/d/yyyy", "MM-dd-yyyy", "M-d-yyyy", "yyyy-MM-dd" };
+
+        /// <summary>
+        /// Búsqueda para el selector de paciente (JSON): por nombre, nº de paciente
+        /// o fecha de nacimiento (MM/dd/yyyy).
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> Search(string? q)
         {
@@ -165,9 +177,13 @@ namespace StudiesFinal.Web.Controllers
                 return Json(Array.Empty<object>());
 
             var query = await _repository.GetAll();
-            query = int.TryParse(q, out var id)
-                ? query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{q}%"))
-                : query.Where(p => EF.Functions.Like(p.Name!, $"%{q}%"));
+            if (DateTime.TryParseExact(q, DobFormats, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var dob))
+                query = query.Where(p => p.DateOfBirth >= dob.Date && p.DateOfBirth < dob.Date.AddDays(1));
+            else if (int.TryParse(q, out var id))
+                query = query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{q}%"));
+            else
+                query = query.Where(p => EF.Functions.Like(p.Name!, $"%{q}%"));
 
             var results = await query
                 .OrderBy(p => p.Name)

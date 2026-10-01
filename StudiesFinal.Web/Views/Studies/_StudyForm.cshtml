@@ -20,13 +20,13 @@
                 <div class="card-body">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-7">
-                            <label class="form-label" for="patientSearch">Paciente</label>
+                            <label class="form-label" for="patientSearch">Patient</label>
                             <div class="sf-picker" data-patient-picker="PatientId" data-search-url="@Url.Action("Search", "Patients")">
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-person" aria-hidden="true"></i></span>
                                     <input type="search" id="patientSearch" class="form-control" autocomplete="off"
-                                           placeholder="Busca por nombre o nº de paciente…" value="@Model.PatientLabel" />
-                                    <a class="btn btn-outline-secondary" asp-controller="Patients" asp-action="Create" asp-route-returnToStudy="1" title="Nuevo paciente">
+                                           placeholder="Search by name, patient # or date of birth (MM/DD/YYYY)…" value="@Model.PatientLabel" />
+                                    <a class="btn btn-outline-secondary" asp-controller="Patients" asp-action="Create" asp-route-returnToStudy="1" title="New patient">
                                         <i class="bi bi-person-plus" aria-hidden="true"></i>
                                     </a>
                                 </div>
@@ -50,7 +50,7 @@
                                 <select asp-for="TemplateId" asp-items="Model.Templates" class="form-select"
                                         data-template-select data-template-target="Information"
                                         data-template-url="@Url.Action("TemplateContent", "StudyTemplates")">
-                                    <option value="">Elige una plantilla…</option>
+                                    <option value="">Choose a template…</option>
                                 </select>
                             </div>
                         }
@@ -63,7 +63,7 @@
                         </div>
                     </div>
 
-                    <label class="form-label">Informe</label>
+                    <label class="form-label">Report</label>
                     <input type="hidden" asp-for="Information" />
                     <partial name="_RichEditor" model="@("Information")" />
                 </div>
@@ -73,10 +73,10 @@
         <div class="col-12 col-xl-4">
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
-                    <h3 class="h6 mb-1">Archivos</h3>
-                    <p class="small text-muted mb-2">Sube el archivo y se guarda en la carpeta del tipo de reporte, o escribe una ruta que empiece por <code>@basePath\</code>.</p>
+                    <h3 class="h6 mb-1">Files</h3>
+                    <p class="small text-muted mb-2">Upload the file and it is saved in the report type folder, or type a path that starts with <code>@basePath\</code>.</p>
                     <div class="small mb-3" data-upload-target data-url="@Url.Action("UploadTarget", "Studies")">
-                        <span class="text-muted">Se guardará como:</span>
+                        <span class="text-muted">It will be saved as:</span>
                         <code class="d-block text-break" data-upload-path>@basePath\…</code>
                     </div>
 
@@ -87,10 +87,10 @@
                         var value = slot switch { 1 => Model.LinkFile1, 2 => Model.LinkFile2, _ => Model.LinkFile3 };
 
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold" for="@linkName">Archivo @slot</label>
+                            <label class="form-label small fw-semibold" for="@linkName">File @slot</label>
                             <input class="form-control form-control-sm mb-1" id="@linkName" name="@linkName" value="@value"
-                                   placeholder="@basePath\Holter Report\HR-Paciente-fecha.pdf" />
-                            <input class="form-control form-control-sm" type="file" id="@uploadName" name="@uploadName" aria-label="Subir archivo @slot" />
+                                   placeholder="@basePath\Holter Report\HR-Patient-date.pdf" />
+                            <input class="form-control form-control-sm" type="file" id="@uploadName" name="@uploadName" aria-label="Upload file @slot" />
                             <span class="text-danger small">@Html.ValidationMessage(linkName)</span>
                             <span class="text-danger small">@Html.ValidationMessage(uploadName)</span>
                         </div>
@@ -105,10 +105,10 @@
                         <label asp-for="Processed" class="form-check-label"></label>
                     </div>
                     <div class="small text-muted mt-2">
-                        Fase: @Html.StatusPill(Model.Status)
+                        Phase: @Html.StatusPill(Model.Status)
                         @if (!isEdit)
                         {
-                            <div class="mt-1">Los estudios nuevos siempre empiezan <strong>En progreso</strong>.</div>
+                            <div class="mt-1">New studies always start <strong>In progress</strong>.</div>
                         }
                     </div>
                 </div>
@@ -118,21 +118,21 @@
 
     <div class="sf-sticky-actions d-flex flex-wrap gap-2">
         <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save me-1" aria-hidden="true"></i>@(isEdit ? "Guardar cambios" : "Crear estudio")
+            <i class="bi bi-save me-1" aria-hidden="true"></i>@(isEdit ? "Save changes" : "Create study")
         </button>
         @if (canSendToSign)
         {
             <button type="submit" name="andSendToSign" value="1" class="btn btn-outline-primary">
-                <i class="bi bi-send me-1" aria-hidden="true"></i>Guardar y enviar a firmar
+                <i class="bi bi-send me-1" aria-hidden="true"></i>Save and send to sign
             </button>
         }
         @if (isEdit)
         {
-            <a asp-action="Details" asp-route-key="@Model.Id" class="btn btn-secondary">Cancelar</a>
+            <a asp-action="Details" asp-route-key="@Model.Id" class="btn btn-secondary">Cancel</a>
         }
         else
         {
-            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
         }
     </div>
 </form>

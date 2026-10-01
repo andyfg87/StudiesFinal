@@ -2,7 +2,7 @@
 @model PaginatedList<UserDisplayVM>
 
 @{
-    ViewData["Title"] = "Usuarios";
+    ViewData["Title"] = "Users";
     var fSearch = Context.Request.Query["search"].ToString();
     var me = User.UserId();
 }
@@ -11,14 +11,14 @@
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
         <div>
-            <h2>Usuarios</h2>
-            <div class="ls-sub">Administradores, doctores y técnicos con acceso a la aplicación</div>
+            <h2>Users</h2>
+            <div class="ls-sub">Administrators, doctors and technicians with access to the application</div>
         </div>
     </div>
 
     <div class="d-flex flex-wrap gap-2">
         <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Nuevo usuario
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>New user
         </a>
     </div>
 </div>
@@ -27,11 +27,11 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-12 col-md-6 col-lg-4">
-                <label for="search" class="form-label">Buscar</label>
-                <input type="search" class="form-control" id="search" name="search" placeholder="Usuario o nombre…" value="@fSearch" />
+                <label for="search" class="form-label">Search</label>
+                <input type="search" class="form-control" id="search" name="search" placeholder="Username or name…" value="@fSearch" />
             </div>
             <div class="col-12 col-md-3 col-lg-2">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtrar</button>
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter</button>
             </div>
         </form>
     </div>
@@ -42,42 +42,42 @@
         <table class="table table-hover align-middle ls-table mb-0">
             <thead>
                 <tr>
-                    <th>@Html.SortHeader("Nombre", "name")</th>
-                    <th>@Html.SortHeader("Usuario", "user")</th>
-                    <th>@Html.SortHeader("Rol", "role")</th>
-                    <th>Estado</th>
-                    <th class="text-end"><span class="visually-hidden">Acciones</span></th>
+                    <th>@Html.SortHeader("Name", "name")</th>
+                    <th>@Html.SortHeader("Username", "user")</th>
+                    <th>@Html.SortHeader("Role", "role")</th>
+                    <th>Status</th>
+                    <th class="text-end"><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td data-label="Nombre" class="fw-semibold">@item.FullName @(item.Id == me ? "(tú)" : "")</td>
-                        <td data-label="Usuario">@item.UserName</td>
-                        <td data-label="Rol">
+                        <td data-label="Name" class="fw-semibold">@item.FullName @(item.Id == me ? "(you)" : "")</td>
+                        <td data-label="Username">@item.UserName</td>
+                        <td data-label="Role">
                             <span class="ls-pill @(item.Role == UserRole.Admin ? "danger" : item.Role == UserRole.Doctor ? "primary" : "info")">@item.RoleLabel</span>
                         </td>
-                        <td data-label="Estado">
+                        <td data-label="Status">
                             @if (item.IsActive)
                             {
-                                <span class="ls-pill success">Activo</span>
+                                <span class="ls-pill success">Active</span>
                             }
                             else
                             {
-                                <span class="ls-pill">Inactivo</span>
+                                <span class="ls-pill">Inactive</span>
                             }
                         </td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-1">
-                                <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-outline-secondary" title="Editar" aria-label="Editar @item.FullName">
+                                <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-outline-secondary" title="Edit" aria-label="Edit @item.FullName">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 @if (item.Id != me)
                                 {
-                                    <form asp-action="DeleteUser" method="post" onsubmit="return confirm('¿Eliminar el usuario @item.UserName?');">
+                                    <form asp-action="DeleteUser" method="post" onsubmit="return confirm('Delete user @item.UserName?');">
                                         <input type="hidden" name="id" value="@item.Id" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar @item.FullName">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" aria-label="Delete @item.FullName">
                                             <i class="bi bi-trash3" aria-hidden="true"></i>
                                         </button>
                                     </form>

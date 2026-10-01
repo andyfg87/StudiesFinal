@@ -66,10 +66,10 @@ namespace StudiesFinal.Web.Controllers
         public override async Task<IActionResult> Create(UserInputVM model)
         {
             if (string.IsNullOrWhiteSpace(model.Password))
-                ModelState.AddModelError(nameof(model.Password), "La contraseña es obligatoria");
+                ModelState.AddModelError(nameof(model.Password), "Password is required");
 
             if (await UsernameExists(model.UserName, null))
-                ModelState.AddModelError(nameof(model.UserName), "Ya existe un usuario con ese nombre");
+                ModelState.AddModelError(nameof(model.UserName), "A user with that username already exists");
 
             if (!ModelState.IsValid)
             {
@@ -84,7 +84,7 @@ namespace StudiesFinal.Web.Controllers
             await _repository.SaveChangesAsync();
             await LogInformation(nameof(Create), model);
 
-            TempData["Success"] = $"Usuario {user.Username} creado.";
+            TempData["Success"] = $"User {user.Username} created.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -109,11 +109,11 @@ namespace StudiesFinal.Web.Controllers
                 return NotFound();
 
             if (await UsernameExists(model.UserName, model.Id))
-                ModelState.AddModelError(nameof(model.UserName), "Ya existe un usuario con ese nombre");
+                ModelState.AddModelError(nameof(model.UserName), "A user with that username already exists");
 
             // No quitarse a uno mismo el rol de administrador ni desactivarse
             if (user.Id == User.UserId() && (model.Role != UserRole.Admin || !model.IsActive))
-                ModelState.AddModelError(nameof(model.Role), "No puedes quitarte el rol de administrador ni desactivar tu propio usuario.");
+                ModelState.AddModelError(nameof(model.Role), "You cannot remove your own administrator role or deactivate your own user.");
 
             if (!ModelState.IsValid)
             {
@@ -129,7 +129,7 @@ namespace StudiesFinal.Web.Controllers
             await _repository.SaveChangesAsync();
             await LogInformation(nameof(Edit), model);
 
-            TempData["Success"] = $"Usuario {user.Username} actualizado.";
+            TempData["Success"] = $"User {user.Username} updated.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -139,7 +139,7 @@ namespace StudiesFinal.Web.Controllers
         {
             if (id == User.UserId())
             {
-                TempData["Error"] = "No puedes eliminar tu propio usuario.";
+                TempData["Error"] = "You cannot delete your own user.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -151,13 +151,13 @@ namespace StudiesFinal.Web.Controllers
             {
                 await _repository.DeleteAsync(id);
                 await _repository.SaveChangesAsync();
-                await _logger.LogInformation($"Usuario eliminado: {user.Username}", nameof(UsersController), nameof(DeleteUser));
-                TempData["Success"] = $"Usuario {user.Username} eliminado.";
+                await _logger.LogInformation($"User deleted: {user.Username}", nameof(UsersController), nameof(DeleteUser));
+                TempData["Success"] = $"User {user.Username} deleted.";
             }
             catch (Exception ex)
             {
                 await LogError(nameof(DeleteUser), ex, new { id });
-                TempData["Error"] = "No se pudo eliminar el usuario. Puedes desactivarlo en su lugar.";
+                TempData["Error"] = "The user could not be deleted. You can deactivate it instead.";
             }
 
             return RedirectToAction(nameof(Index));

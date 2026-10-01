@@ -82,7 +82,7 @@
 
             var editor = editors[templateSelect.dataset.templateTarget || "Information"];
             var hasText = editor && editor.getLength() > 1;
-            if (hasText && !confirm("¿Reemplazar el contenido actual del informe con la plantilla?")) {
+            if (hasText && !confirm("Replace the current report content with the template?")) {
                 return;
             }
 
@@ -97,7 +97,7 @@
                         editor.clipboard.dangerouslyPasteHTML(data.info || "");
                     }
                 })
-                .catch(function () { alert("No se pudo cargar la plantilla."); });
+                .catch(function () { alert("The template could not be loaded."); });
         });
     }
 
@@ -130,7 +130,7 @@
                     .then(function (list) {
                         results.innerHTML = "";
                         if (!list.length) {
-                            results.innerHTML = '<div class="p-2 small text-muted">Sin resultados</div>';
+                            results.innerHTML = '<div class="p-2 small text-muted">No results</div>';
                         }
                         list.forEach(function (p) {
                             var b = document.createElement("button");
@@ -140,7 +140,7 @@
                             id.textContent = p.id;
                             var n = document.createElement("span");
                             n.className = "flex-fill";
-                            n.textContent = p.name || "(sin nombre)";
+                            n.textContent = p.name || "(no name)";
                             var d = document.createElement("span");
                             d.className = "small text-muted";
                             d.textContent = p.dob || "";

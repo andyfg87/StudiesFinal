@@ -44,8 +44,8 @@
             var i = toggle.querySelector("i");
             i.classList.toggle("bi-eye", !show);
             i.classList.toggle("bi-eye-slash", show);
-            toggle.setAttribute("aria-label", show ? "Ocultar" : "Mostrar");
-            toggle.setAttribute("title", show ? "Ocultar" : "Mostrar");
+            toggle.setAttribute("aria-label", show ? "Hide" : "Show");
+            toggle.setAttribute("title", show ? "Hide" : "Show");
             return;
         }
 

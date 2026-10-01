@@ -32,13 +32,13 @@ namespace StudiesFinal.Web.Controllers
         // Métodos específicos para logging
         protected async Task LogInformation(string action, object? data = null)
         {
-            var message = $"Se ejecutó {action} en {GetEntityName()}";
+            var message = $"{action} executed on {GetEntityName()}";
             await _logger.LogInformation(message, GetControllerName(), action, data);
         }
 
         protected async Task LogError(string action, Exception ex, object? data = null)
         {
-            var message = $"Error al {action} en {GetEntityName()}";
+            var message = $"Error on {action} in {GetEntityName()}";
             await _logger.LogError(message, ex, GetControllerName(), action, data);
         }
 
@@ -73,7 +73,7 @@ namespace StudiesFinal.Web.Controllers
             catch (Exception ex)
             {
                 await LogError(nameof(Create), ex, inputViewModel);
-                ModelState.AddModelError("", _localizer["No se pudo crear el registro."]);
+                ModelState.AddModelError("", _localizer["The record could not be created."]);
                 return View(inputViewModel);
             }
         }
@@ -124,7 +124,7 @@ namespace StudiesFinal.Web.Controllers
             catch (Exception ex)
             {
                 await LogError(nameof(Edit), ex, inputModel);
-                ModelState.AddModelError("", _localizer["No se pudieron guardar los cambios."]);
+                ModelState.AddModelError("", _localizer["The changes could not be saved."]);
                 return View(inputModel);
             }
         }

@@ -2,7 +2,7 @@
 @model PaginatedList<ApplicationLog>
 
 @{
-    ViewData["Title"] = "Actividad";
+    ViewData["Title"] = "Activity";
     var q = Context.Request.Query;
     var fLevel = q["level"].ToString();
     var fSearch = q["search"].ToString();
@@ -12,8 +12,8 @@
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-list-columns"></i></span>
         <div>
-            <h2>Actividad</h2>
-            <div class="ls-sub">Accesos, cambios de fase, firmas y desbloqueos</div>
+            <h2>Activity</h2>
+            <div class="ls-sub">Sign-ins, phase changes, signatures and unlocks</div>
         </div>
     </div>
 </div>
@@ -22,9 +22,9 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-6 col-md-3 col-lg-2">
-                <label for="level" class="form-label">Nivel</label>
+                <label for="level" class="form-label">Level</label>
                 <select id="level" name="level" class="form-select">
-                    <option value="">Todos</option>
+                    <option value="">All</option>
                     @foreach (var l in new[] { "INFO", "WARNING", "ERROR" })
                     {
                         <option value="@l" selected="@(l == fLevel)">@l</option>
@@ -32,11 +32,11 @@
                 </select>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-                <label for="search" class="form-label">Buscar</label>
-                <input type="search" id="search" name="search" class="form-control" value="@fSearch" placeholder="Mensaje, usuario, parámetros…" />
+                <label for="search" class="form-label">Search</label>
+                <input type="search" id="search" name="search" class="form-control" value="@fSearch" placeholder="Message, user, parameters…" />
             </div>
             <div class="col-12 col-md-3 col-lg-2">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtrar</button>
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter</button>
             </div>
         </form>
     </div>
@@ -47,31 +47,31 @@
         <table class="table table-sm table-hover align-middle ls-table mb-0">
             <thead>
                 <tr>
-                    <th>Fecha</th>
-                    <th>Nivel</th>
-                    <th>Usuario</th>
-                    <th>Mensaje</th>
-                    <th>Detalle</th>
+                    <th>Date</th>
+                    <th>Level</th>
+                    <th>User</th>
+                    <th>Message</th>
+                    <th>Details</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var log in Model)
                 {
                     <tr>
-                        <td data-label="Fecha" class="text-nowrap small">@log.Timestamp.ToString("MM/dd/yyyy HH:mm:ss")</td>
-                        <td data-label="Nivel">
+                        <td data-label="Date" class="text-nowrap small">@log.Timestamp.ToString("MM/dd/yyyy HH:mm:ss")</td>
+                        <td data-label="Level">
                             <span class="ls-pill @(log.Level == "ERROR" ? "danger" : log.Level == "WARNING" ? "warning" : "info")">@log.Level</span>
                         </td>
-                        <td data-label="Usuario" class="small">@log.User</td>
-                        <td data-label="Mensaje">@log.Message <div class="small text-muted">@log.Logger · @log.Action</div></td>
-                        <td data-label="Detalle" class="small">
+                        <td data-label="User" class="small">@log.User</td>
+                        <td data-label="Message">@log.Message <div class="small text-muted">@log.Logger · @log.Action</div></td>
+                        <td data-label="Details" class="small">
                             @if (!string.IsNullOrEmpty(log.Parameters) && log.Parameters != "null")
                             {
                                 <code class="d-block text-break" style="max-width:420px">@log.Parameters</code>
                             }
                             @if (!string.IsNullOrEmpty(log.Exception))
                             {
-                                <details><summary class="text-danger">Excepción</summary><pre class="small mb-0" style="white-space:pre-wrap">@log.Exception</pre></details>
+                                <details><summary class="text-danger">Exception</summary><pre class="small mb-0" style="white-space:pre-wrap">@log.Exception</pre></details>
                             }
                         </td>
                     </tr>

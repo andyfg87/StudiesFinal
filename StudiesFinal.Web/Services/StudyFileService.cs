@@ -33,7 +33,7 @@ namespace StudiesFinal.Web.Services
 
             if (string.IsNullOrWhiteSpace(Server))
                 throw new InvalidOperationException(
-                    "Falta StudyFiles:Server en appsettings.json (IP del servidor de archivos de los estudios).");
+                    "StudyFiles:Server is missing in appsettings.json (IP of the studies file server).");
 
             var server = Server.Trim().TrimStart('\\').TrimEnd('\\');
             var share = (Share ?? "").Trim().Trim('\\', '/');
@@ -59,7 +59,7 @@ namespace StudiesFinal.Web.Services
         public Dictionary<string, string> Prefixes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Carpeta para estudios sin tipo de reporte.</summary>
-        public string DefaultFolder { get; set; } = "Otros";
+        public string DefaultFolder { get; set; } = "Other";
 
         public long MaxUploadBytes { get; set; } = 200L * 1024 * 1024;
     }
@@ -172,14 +172,14 @@ namespace StudiesFinal.Web.Services
         public string FileNameFor(string? studyName, string? patientName, string extension)
         {
             var patient = Sanitize(patientName);
-            if (string.IsNullOrEmpty(patient)) patient = "Paciente";
+            if (string.IsNullOrEmpty(patient)) patient = "Patient";
             return $"{PrefixFor(studyName)}-{patient}-{DateTime.Today:MM-dd-yyyy}{extension}";
         }
 
         public async Task<string> SaveAsync(IFormFile file, Study study, Patient patient, int slot)
         {
             if (file.Length > _options.MaxUploadBytes)
-                throw new InvalidOperationException($"El archivo supera el máximo de {_options.MaxUploadBytes / (1024 * 1024)} MB.");
+                throw new InvalidOperationException($"The file exceeds the {_options.MaxUploadBytes / (1024 * 1024)} MB limit.");
 
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             var target = NewTargetPath(study.StudyName, patient.Name, ext);

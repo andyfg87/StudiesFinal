@@ -5,8 +5,8 @@
     var canManage = StudiesFinal.Web.Services.StudyWorkflow.CanManageTemplates(User);
 }
 
-<nav class="crumbs" aria-label="Migas">
-    <a asp-action="Index">Plantillas</a> / <span>@Model.StudyTitle</span>
+<nav class="crumbs" aria-label="Breadcrumb">
+    <a asp-action="Index">Templates</a> / <span>@Model.StudyTitle</span>
 </nav>
 
 <div class="ls-head">
@@ -14,18 +14,18 @@
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
         <div>
             <h2>@Model.StudyTitle</h2>
-            <div class="ls-sub">Nombre del estudio: @Model.GenericName</div>
+            <div class="ls-sub">Study name: @Model.GenericName</div>
         </div>
     </div>
 
     <div class="d-flex flex-wrap gap-2">
         <a asp-controller="Studies" asp-action="Create" asp-route-templateId="@Model.Id" class="btn btn-primary">
-            <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>Nuevo estudio con esta plantilla
+            <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>New study with this template
         </a>
         @if (canManage)
         {
             <a asp-action="Edit" asp-route-key="@Model.Id" class="btn btn-outline-secondary">
-                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
             </a>
         }
     </div>

@@ -35,8 +35,8 @@
                         <label asp-for="Role" class="form-label"></label>
                         <select asp-for="Role" asp-items="Model.AvailableRoles" class="form-select"></select>
                         <div class="form-text">
-                            Técnico: crea y edita estudios en progreso. Doctor: lo ve todo, firma y desbloquea.
-                            Administrador: usuarios y plantillas.
+                            Technician: creates and edits studies in progress. Doctor: sees everything, signs and unlocks.
+                            Administrator: users and templates.
                         </div>
                         <span asp-validation-for="Role" class="text-danger"></span>
                     </div>
@@ -47,7 +47,7 @@
                             <input asp-for="Password" class="form-control" autocomplete="new-password" />
                             @if (Model.IsEdit)
                             {
-                                <div class="form-text">Déjala vacía para no cambiarla.</div>
+                                <div class="form-text">Leave it empty to keep the current one.</div>
                             }
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
@@ -64,8 +64,8 @@
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

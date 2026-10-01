@@ -8,13 +8,13 @@ namespace StudiesFinal.Web.Models.ViewModels
     {
         public int Id { get; set; }
 
-        [Display(Name = "Título")]
+        [Display(Name = "Title")]
         public string StudyTitle { get; set; } = string.Empty;
 
-        [Display(Name = "Nombre del estudio")]
+        [Display(Name = "Study name")]
         public string? GenericName { get; set; }
 
-        [Display(Name = "Contenido")]
+        [Display(Name = "Content")]
         public string? StudyInfo { get; set; }
 
         public void Import(StudyTemplate entity)
@@ -30,17 +30,17 @@ namespace StudiesFinal.Web.Models.ViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "El título es obligatorio")]
+        [Required(ErrorMessage = "Title is required")]
         [StringLength(50)]
-        [Display(Name = "Título de la plantilla")]
+        [Display(Name = "Template title")]
         public string StudyTitle { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El nombre del estudio es obligatorio")]
+        [Required(ErrorMessage = "Study name is required")]
         [StringLength(50)]
-        [Display(Name = "Nombre del estudio (se usa en el informe)")]
+        [Display(Name = "Study name (used in the report)")]
         public string? GenericName { get; set; }
 
-        [Display(Name = "Contenido")]
+        [Display(Name = "Content")]
         public string? StudyInfo { get; set; }
 
         public StudyTemplate Export()

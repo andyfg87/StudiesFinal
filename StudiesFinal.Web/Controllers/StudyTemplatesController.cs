@@ -71,9 +71,9 @@ namespace StudiesFinal.Web.Controllers
 
             await _repository.DeleteAsync(id);
             await _repository.SaveChangesAsync();
-            await _logger.LogInformation($"Plantilla eliminada: {template.StudyTitle}", nameof(StudyTemplatesController), nameof(DeleteTemplate));
+            await _logger.LogInformation($"Template deleted: {template.StudyTitle}", nameof(StudyTemplatesController), nameof(DeleteTemplate));
 
-            TempData["Success"] = "Plantilla eliminada.";
+            TempData["Success"] = "Template deleted.";
             return RedirectToAction(nameof(Index));
         }
 

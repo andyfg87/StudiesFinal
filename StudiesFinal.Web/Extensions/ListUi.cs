@@ -42,8 +42,8 @@ namespace StudiesFinal.Web.Extensions
             var icon = !active ? "bi-chevron-expand"
                      : currentOrder == "asc" ? "bi-caret-up-fill" : "bi-caret-down-fill";
 
-            var title = !active ? "Ordenar"
-                      : currentOrder == "asc" ? "Orden ascendente" : "Orden descendente";
+            var title = !active ? "Sort"
+                      : currentOrder == "asc" ? "Ascending" : "Descending";
 
             var enc = HtmlEncoder.Default;
             return new HtmlString(
@@ -55,9 +55,9 @@ namespace StudiesFinal.Web.Extensions
 
         public static string Label(this StudyStatus status) => status switch
         {
-            StudyStatus.InProgress => "En progreso",
-            StudyStatus.ToSign => "Por firmar",
-            StudyStatus.Completed => "Completado",
+            StudyStatus.InProgress => "In progress",
+            StudyStatus.ToSign => "To sign",
+            StudyStatus.Completed => "Completed",
             _ => status.ToString()
         };
 
@@ -82,9 +82,9 @@ namespace StudiesFinal.Web.Extensions
 
         public static string RoleLabel(this UserRole role) => role switch
         {
-            UserRole.Admin => "Administrador",
+            UserRole.Admin => "Administrator",
             UserRole.Doctor => "Doctor",
-            UserRole.Technician => "Técnico",
+            UserRole.Technician => "Technician",
             _ => role.ToString()
         };
 

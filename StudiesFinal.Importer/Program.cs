@@ -31,7 +31,7 @@ using System.Globalization;
 var options = ParseArgs(args);
 if (!options.TryGetValue("source", out var source) || !File.Exists(source))
 {
-    Console.Error.WriteLine("Uso: --source <StudiesFinal1_be.accdb> [--replace] [--environment Production|Development] " +
+    Console.Error.WriteLine("Usage: --source <StudiesFinal1_be.accdb> [--replace] [--environment Production|Development] " +
                             "[--connection \"...\"] [--settings <appsettings.json>]");
     return 1;
 }
@@ -54,7 +54,7 @@ var config = new ConfigurationBuilder()
 var connectionString = options.GetValueOrDefault("connection") ?? config.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    Console.Error.WriteLine("Falta ConnectionStrings:DefaultConnection (o --connection).");
+    Console.Error.WriteLine("ConnectionStrings:DefaultConnection (or --connection) is missing.");
     return 1;
 }
 
@@ -65,7 +65,7 @@ if (string.IsNullOrWhiteSpace(basePath))
     var server = config["StudyFiles:Server"]?.Trim().Trim('\\');
     if (string.IsNullOrWhiteSpace(server))
     {
-        Console.Error.WriteLine($"Falta StudyFiles:Server en {settingsPath}.");
+        Console.Error.WriteLine($"StudyFiles:Server is missing in {settingsPath}.");
         return 1;
     }
     var share = (config["StudyFiles:Share"] ?? "Studies").Trim().Trim('\\', '/');
@@ -75,10 +75,10 @@ basePath = basePath.TrimEnd('\\');
 var legacyPrefixes = config.GetSection("StudyFiles:LegacyPrefixes").Get<string[]>()
                      ?? new[] { @"Z:\Studies", @"Y:\Studies", @"\\192.168.199.170\Studies" };
 
-Console.WriteLine($"Origen : {source}");
-Console.WriteLine($"Entorno: {environment}");
-Console.WriteLine($"Destino: SQL Server · {DescribeConnection(connectionString)}");
-Console.WriteLine($"Links  : {string.Join(", ", legacyPrefixes)} -> {basePath}");
+Console.WriteLine($"Source     : {source}");
+Console.WriteLine($"Environment: {environment}");
+Console.WriteLine($"Target     : SQL Server · {DescribeConnection(connectionString)}");
+Console.WriteLine($"Links      : {string.Join(", ", legacyPrefixes)} -> {basePath}");
 
 var dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
     .UseSqlServer(connectionString, sql => sql.CommandTimeout(120))
@@ -112,11 +112,11 @@ if (await db.Studies.AnyAsync() || await db.Patients.AnyAsync() || await db.Stud
 {
     if (!replace)
     {
-        Console.Error.WriteLine("La base de datos ya tiene datos. Usa --replace para borrarlos (usuarios y actividad se conservan).");
+        Console.Error.WriteLine("The database already has data. Use --replace to delete it (users and activity are kept).");
         return 2;
     }
 
-    Console.WriteLine("Borrando estudios, pacientes y plantillas existentes…");
+    Console.WriteLine("Deleting existing studies, patients and templates…");
     await db.Studies.ExecuteDeleteAsync();
     await db.Patients.ExecuteDeleteAsync();
     await db.StudyTemplates.ExecuteDeleteAsync();
@@ -135,7 +135,7 @@ await WithExplicitIds<StudyTemplate>(async () =>
         db.StudyTemplates.Add(new StudyTemplate
         {
             Id = Convert.ToInt32(r["ID"]),
-            StudyTitle = Str(r["StudyTitle"], 50) ?? $"Plantilla {r["ID"]}",
+            StudyTitle = Str(r["StudyTitle"], 50) ?? $"Template {r["ID"]}",
             StudyInfo = Str(r["StudyInfo"]),
             GenericName = Str(r["GenericName"], 50)
         });
@@ -144,7 +144,7 @@ await WithExplicitIds<StudyTemplate>(async () =>
     await db.SaveChangesAsync();
     db.ChangeTracker.Clear();
 });
-Console.WriteLine($"Plantillas: {templates}");
+Console.WriteLine($"Templates: {templates}");
 
 // ---- Pacientes ---------------------------------------------------------------
 var patientIds = new HashSet<int>();
@@ -164,7 +164,7 @@ foreach (var r in Read(access, "SELECT PatientID, PatientName, DOB FROM Patientt
 }
 await db.SaveChangesAsync();
 db.ChangeTracker.Clear();
-Console.WriteLine($"Pacientes: {patientIds.Count}");
+Console.WriteLine($"Patients: {patientIds.Count}");
 
 // ---- Estudios ------------------------------------------------------------------
 int studies = 0, orphans = 0, noDate = 0, rewritten = 0;
@@ -179,7 +179,7 @@ await WithExplicitIds<Study>(async () =>
         // Estudios cuyo paciente ya no existe: se crea un paciente "desconocido" con ese Id
         if (patientIds.Add(patientId))
         {
-            db.Patients.Add(new Patient { Id = patientId, Name = $"(Paciente {patientId} no encontrado en Access)" });
+            db.Patients.Add(new Patient { Id = patientId, Name = $"(Patient {patientId} not found in Access)" });
             orphans++;
         }
 
@@ -214,9 +214,9 @@ await WithExplicitIds<Study>(async () =>
             LinkFile2 = Link(r["LinkFile2"]),
             LinkFile3 = Link(r["LinkFile3"]),
             SignedAt = status == StudyStatus.Completed ? signedAt : null,
-            SignedByName = status == StudyStatus.Completed ? "Firma importada de Access" : null,
+            SignedByName = status == StudyStatus.Completed ? "Signature imported from Access" : null,
             CreatedAt = studyDate ?? DateTime.Now,
-            CreatedByName = "Importado de Access"
+            CreatedByName = "Imported from Access"
         });
 
         if (++studies % 500 == 0) { await db.SaveChangesAsync(); db.ChangeTracker.Clear(); }
@@ -224,12 +224,12 @@ await WithExplicitIds<Study>(async () =>
     await db.SaveChangesAsync();
 });
 
-Console.WriteLine($"Estudios: {studies}  (En progreso {statusCount.GetValueOrDefault(StudyStatus.InProgress)}, " +
-                  $"Por firmar {statusCount.GetValueOrDefault(StudyStatus.ToSign)}, Completados {statusCount.GetValueOrDefault(StudyStatus.Completed)})");
-Console.WriteLine($"Pacientes creados para estudios huérfanos: {orphans}");
-Console.WriteLine($"Estudios sin fecha (puestos a 01/01/1900): {noDate}");
-Console.WriteLine($"Links reescritos a {basePath}: {rewritten}");
-Console.WriteLine("Importación terminada.");
+Console.WriteLine($"Studies: {studies}  (In progress {statusCount.GetValueOrDefault(StudyStatus.InProgress)}, " +
+                  $"To sign {statusCount.GetValueOrDefault(StudyStatus.ToSign)}, Completed {statusCount.GetValueOrDefault(StudyStatus.Completed)})");
+Console.WriteLine($"Patients created for orphan studies: {orphans}");
+Console.WriteLine($"Studies without date (set to 01/01/1900): {noDate}");
+Console.WriteLine($"Links rewritten to {basePath}: {rewritten}");
+Console.WriteLine("Import finished.");
 return 0;
 
 // =========================================================================
@@ -253,7 +253,7 @@ static OleDbConnection OpenAccess(string path)
         }
         catch (InvalidOperationException) { /* proveedor no registrado: probar el siguiente */ }
     }
-    throw new InvalidOperationException("No está instalado Microsoft Access Database Engine (ACE OLEDB) de 64 bits.");
+    throw new InvalidOperationException("Microsoft Access Database Engine (ACE OLEDB) 64-bit is not installed.");
 }
 
 static IEnumerable<Dictionary<string, object>> Read(OleDbConnection c, string sql)

@@ -29,7 +29,7 @@ namespace StudiesFinal.Web.Services
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                logger.LogWarning("No hay usuarios y falta la sección SeedAdmin: no se puede crear el administrador inicial.");
+                logger.LogWarning("There are no users and the SeedAdmin section is missing: the initial administrator cannot be created.");
                 return;
             }
 
@@ -45,7 +45,7 @@ namespace StudiesFinal.Web.Services
             context.Users.Add(admin);
             await context.SaveChangesAsync();
 
-            logger.LogWarning("Creado el administrador inicial '{User}'. Cambia su contraseña tras el primer acceso.", username);
+            logger.LogWarning("Initial administrator '{User}' created. Change its password after the first sign-in.", username);
         }
     }
 }

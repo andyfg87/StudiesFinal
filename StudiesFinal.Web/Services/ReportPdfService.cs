@@ -132,7 +132,7 @@ namespace StudiesFinal.Web.Services
                             });
 
                         Field("Patient:", study.Patient?.Name, 0);
-                        Field("D.O.B:", study.Patient?.DateOfBirth?.ToString("d-MMM-yy", Us), 12);
+                        Field("D.O.B:", study.Patient?.DateOfBirth?.ToString("MMM-dd-yy", Us), 12);
                         Field("Study Date:", study.StudyDate.ToString("MM/dd/yyyy", Us), 12);
                         Field("Test:", study.StudyName, 9);
 
@@ -158,13 +158,13 @@ namespace StudiesFinal.Web.Services
                                 left.Item().PaddingTop(4).Text(_report["SignatureTitle"] ?? "").Bold().FontSize(14);
                             });
 
-                            row.RelativeItem().AlignBottom().PaddingLeft(40).PaddingBottom(2)
+                            row.RelativeItem().AlignBottom().AlignRight().PaddingBottom(2)
                                 .Text(signed ? "Final Report" : "Preliminary Report")
                                 .Bold().FontSize(14).FontColor(signed ? Colors.Black : "#B00000");
                         });
 
                         col.Item().PaddingTop(16).AlignRight()
-                            .Text(signed ? study.SignedAt?.ToString("M/d/yyyy h:mm:ss tt", Us) ?? "" : "")
+                            .Text(signed ? study.SignedAt?.ToString("MM/dd/yyyy h:mm:ss tt", Us) ?? "" : "")
                             .Italic().FontColor(Gray);
                     });
                 });

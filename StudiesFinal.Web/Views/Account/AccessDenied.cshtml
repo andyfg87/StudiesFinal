@@ -1,12 +1,12 @@
 @{
-    ViewData["Title"] = "Acceso denegado";
+    ViewData["Title"] = "Access denied";
 }
 
 <div class="card shadow-sm">
     <div class="card-body text-center py-5">
         <i class="bi bi-shield-lock fs-1 text-danger d-block mb-2" aria-hidden="true"></i>
-        <h2 class="h4">No tienes permiso para esta acción</h2>
-        <p class="text-muted">Tu rol no permite acceder a esta página. Si crees que es un error, habla con el administrador.</p>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Volver al inicio</a>
+        <h2 class="h4">You do not have permission for this action</h2>
+        <p class="text-muted">Your role does not allow access to this page. If you think this is a mistake, contact the administrator.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to home</a>
     </div>
 </div>

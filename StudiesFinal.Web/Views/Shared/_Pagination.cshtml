@@ -23,18 +23,18 @@
     int endPage = Math.Min(totalPages, currentPage + 2);
 }
 
-<nav aria-label="Paginación" class="sf-pager">
+<nav aria-label="Pagination" class="sf-pager">
     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
         <div class="page-size-selector small">
-            <span class="me-2">Mostrar:</span>
+            <span class="me-2">Show:</span>
             <select class="form-select form-select-sm d-inline-block" style="width:auto" onchange="changePageSize(this.value)">
                 @foreach (var size in pageSizeOptions)
                 {
                     <option value="@size" selected="@(size == currentPageSize)">@size</option>
                 }
-                <option value="0" selected="@(currentPageSize == int.MaxValue)">Todos</option>
+                <option value="0" selected="@(currentPageSize == int.MaxValue)">All</option>
             </select>
-            <span class="ms-2">de @Model.TotalCount registros</span>
+            <span class="ms-2">of @Model.TotalCount @(Model.TotalCount == 1 ? "record" : "records")</span>
         </div>
 
         @if (totalPages > 1)
@@ -42,7 +42,7 @@
             <ul class="pagination pagination-sm mb-0">
                 @if (Model.HasPreviousPage)
                 {
-                    <li class="page-item"><a class="page-link" href="@PageUrl(currentPage - 1)">Anterior</a></li>
+                    <li class="page-item"><a class="page-link" href="@PageUrl(currentPage - 1)">Previous</a></li>
                 }
 
                 @if (startPage > 1)
@@ -70,7 +70,7 @@
 
                 @if (Model.HasNextPage)
                 {
-                    <li class="page-item"><a class="page-link" href="@PageUrl(currentPage + 1)">Siguiente</a></li>
+                    <li class="page-item"><a class="page-link" href="@PageUrl(currentPage + 1)">Next</a></li>
                 }
             </ul>
         }

@@ -49,6 +49,7 @@ namespace StudiesFinal.Web.Controllers
             var studyName = q["studyName"].ToString();
             DateTime? from = DateTime.TryParse(q["from"], out var f) ? f.Date : null;
             DateTime? to = DateTime.TryParse(q["to"], out var t) ? t.Date : null;
+            DateTime? dob = DateTime.TryParse(q["dob"], out var b) ? b.Date : null;
 
             // Fase: la del parámetro o, por defecto, la que le toca a cada rol
             var statusParam = q["status"].ToString();
@@ -65,6 +66,8 @@ namespace StudiesFinal.Web.Controllers
                     ? baseQuery.Where(x => x.PatientId == number || x.Id == number || EF.Functions.Like(x.Patient!.Name!, like))
                     : baseQuery.Where(x => EF.Functions.Like(x.Patient!.Name!, like) || EF.Functions.Like(x.StudyName!, like));
             }
+            if (dob.HasValue)
+                baseQuery = baseQuery.Where(x => x.Patient!.DateOfBirth >= dob.Value && x.Patient!.DateOfBirth < dob.Value.AddDays(1));
             if (!string.IsNullOrEmpty(studyName))
                 baseQuery = baseQuery.Where(x => x.StudyName == studyName);
             if (from.HasValue)
@@ -98,6 +101,7 @@ namespace StudiesFinal.Web.Controllers
             {
                 ["status"] = status?.ToString() ?? "all",
                 ["search"] = search,
+                ["dob"] = dob?.ToString("yyyy-MM-dd"),
                 ["studyName"] = studyName,
                 ["from"] = from?.ToString("yyyy-MM-dd"),
                 ["to"] = to?.ToString("yyyy-MM-dd"),
@@ -183,7 +187,7 @@ namespace StudiesFinal.Web.Controllers
         {
             var patient = model.PatientId.HasValue ? await _patientRepository.GetByIdAsync(model.PatientId.Value) : null;
             if (patient == null)
-                ModelState.AddModelError(nameof(model.PatientId), "Selecciona un paciente existente");
+                ModelState.AddModelError(nameof(model.PatientId), "Select an existing patient");
 
             NormalizeLinks(model);
 
@@ -207,14 +211,14 @@ namespace StudiesFinal.Web.Controllers
             catch (Exception ex)
             {
                 await LogError(nameof(Create), ex, new { model.PatientId, model.StudyName });
-                ModelState.AddModelError("", "No se pudo crear el estudio.");
+                ModelState.AddModelError("", "The study could not be created.");
                 return await CreateView(model, patient);
             }
 
             if (Request.Form.ContainsKey("andSendToSign"))
-                return await ChangeStatus(study.Id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Estudio creado y enviado a firmar.");
+                return await ChangeStatus(study.Id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Study created and sent to sign.");
 
-            TempData["Success"] = "Estudio creado.";
+            TempData["Success"] = "Study created.";
             return RedirectToAction(nameof(Details), new { key = study.Id });
         }
 
@@ -228,8 +232,8 @@ namespace StudiesFinal.Web.Controllers
             if (!StudyWorkflow.CanEdit(study, User))
             {
                 TempData["Error"] = study.IsLocked
-                    ? "El estudio está firmado. Solo el doctor puede desbloquearlo para editarlo."
-                    : "No tienes permiso para editar este estudio en su fase actual.";
+                    ? "This study is signed. Only the doctor can unlock it for editing."
+                    : "You are not allowed to edit this study in its current phase.";
                 return RedirectToAction(nameof(Details), new { key });
             }
 
@@ -252,13 +256,13 @@ namespace StudiesFinal.Web.Controllers
 
             if (!StudyWorkflow.CanEdit(study, User))
             {
-                TempData["Error"] = "El estudio ya no se puede editar (puede que lo hayan firmado mientras tanto).";
+                TempData["Error"] = "This study can no longer be edited (it may have been signed in the meantime).";
                 return RedirectToAction(nameof(Details), new { key = model.Id });
             }
 
             var patient = model.PatientId.HasValue ? await _patientRepository.GetByIdAsync(model.PatientId.Value) : null;
             if (patient == null)
-                ModelState.AddModelError(nameof(model.PatientId), "Selecciona un paciente existente");
+                ModelState.AddModelError(nameof(model.PatientId), "Select an existing patient");
 
             NormalizeLinks(model);
 
@@ -279,9 +283,9 @@ namespace StudiesFinal.Web.Controllers
             await LogInformation(nameof(Edit), new { study.Id, study.PatientId, study.StudyName, Status = study.Status.ToString() });
 
             if (Request.Form.ContainsKey("andSendToSign"))
-                return await ChangeStatus(study.Id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Cambios guardados y estudio enviado a firmar.");
+                return await ChangeStatus(study.Id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Changes saved and study sent to sign.");
 
-            TempData["Success"] = "Cambios guardados.";
+            TempData["Success"] = "Changes saved.";
             return RedirectToAction(nameof(Details), new { key = study.Id });
         }
 
@@ -289,13 +293,13 @@ namespace StudiesFinal.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public Task<IActionResult> SendToSign(int id)
-            => ChangeStatus(id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Estudio enviado a firmar.");
+            => ChangeStatus(id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Study sent to sign.");
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = Roles.AdminOrDoctor)]
         public Task<IActionResult> ReturnToProgress(int id)
-            => ChangeStatus(id, StudyWorkflow.CanReturnToProgress, StudyStatus.InProgress, "Estudio devuelto a En progreso.");
+            => ChangeStatus(id, StudyWorkflow.CanReturnToProgress, StudyStatus.InProgress, "Study returned to In progress.");
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -308,7 +312,7 @@ namespace StudiesFinal.Web.Controllers
 
             if (!StudyWorkflow.CanSign(study, User))
             {
-                TempData["Error"] = "Este estudio no está pendiente de firma.";
+                TempData["Error"] = "This study is not waiting to be signed.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
@@ -320,13 +324,13 @@ namespace StudiesFinal.Web.Controllers
             study.UpdatedByName = User.FullName();
 
             await _repository.SaveChangesAsync();
-            await _logger.LogInformation($"Estudio {id} firmado", nameof(StudiesController), nameof(Sign), new { id });
+            await _logger.LogInformation($"Study {id} signed", nameof(StudiesController), nameof(Sign), new { id });
 
             // PDF del informe firmado en \\{Server}\{Share}\<tipo>\. Si falla, la firma se mantiene.
             var pdfError = await SaveSignedPdf(study);
             TempData["Success"] = pdfError == null
-                ? $"Estudio firmado. PDF guardado en {study.SignedPdfPath}"
-                : "Estudio firmado.";
+                ? $"Study signed. PDF saved to {study.SignedPdfPath}"
+                : "Study signed.";
             if (pdfError != null)
                 TempData["Error"] = pdfError;
 
@@ -340,7 +344,7 @@ namespace StudiesFinal.Web.Controllers
                 if (nextId.HasValue)
                     return RedirectToAction(nameof(Details), new { key = nextId.Value });
 
-                TempData["Success"] = TempData.Peek("Success") + " No quedan estudios por firmar.";
+                TempData["Success"] = TempData.Peek("Success") + " There are no more studies to sign.";
                 return RedirectToAction(nameof(Index), new { status = nameof(StudyStatus.ToSign) });
             }
 
@@ -362,13 +366,13 @@ namespace StudiesFinal.Web.Controllers
 
             if (study.Status != StudyStatus.Completed)
             {
-                TempData["Error"] = "Solo se genera el PDF de estudios firmados.";
+                TempData["Error"] = "A PDF can only be generated for signed studies.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
             var error = await SaveSignedPdf(study);
             if (error == null)
-                TempData["Success"] = $"PDF guardado en {study.SignedPdfPath}";
+                TempData["Success"] = $"PDF saved to {study.SignedPdfPath}";
             else
                 TempData["Error"] = error;
 
@@ -400,7 +404,7 @@ namespace StudiesFinal.Web.Controllers
 
             if (!StudyWorkflow.CanUnlock(study, User))
             {
-                TempData["Error"] = "Solo el doctor puede desbloquear un estudio firmado.";
+                TempData["Error"] = "Only the doctor can unlock a signed study.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
@@ -416,10 +420,10 @@ namespace StudiesFinal.Web.Controllers
             study.UpdatedByName = User.FullName();
 
             await _repository.SaveChangesAsync();
-            await _logger.LogWarning($"Estudio {id} desbloqueado", nameof(StudiesController), nameof(Unlock),
+            await _logger.LogWarning($"Study {id} unlocked", nameof(StudiesController), nameof(Unlock),
                 new { id, reason, previous.SignedAt, previous.SignedByName, previous.SignedPdfPath });
 
-            TempData["Success"] = "Estudio desbloqueado. Vuelve a estar Por firmar.";
+            TempData["Success"] = "Study unlocked. It is back in To sign.";
             return RedirectToAction(nameof(Details), new { key = id });
         }
 
@@ -434,17 +438,17 @@ namespace StudiesFinal.Web.Controllers
 
             if (!StudyWorkflow.CanDelete(study, User))
             {
-                TempData["Error"] = "No se puede eliminar un estudio firmado.";
+                TempData["Error"] = "A signed study cannot be deleted.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
             var status = study.Status;
             await _repository.DeleteAsync(id);
             await _repository.SaveChangesAsync();
-            await _logger.LogWarning($"Estudio {id} eliminado", nameof(StudiesController), nameof(DeleteStudy),
+            await _logger.LogWarning($"Study {id} deleted", nameof(StudiesController), nameof(DeleteStudy),
                 new { id, study.PatientId, study.StudyName });
 
-            TempData["Success"] = "Estudio eliminado.";
+            TempData["Success"] = "Study deleted.";
             return RedirectToAction(nameof(Index), new { status = status.ToString() });
         }
 
@@ -471,7 +475,7 @@ namespace StudiesFinal.Web.Controllers
 
             if (!_files.IsAllowed(path))
             {
-                TempData["Error"] = $"La ruta del archivo no está dentro de {_files.BasePath}.";
+                TempData["Error"] = $"The file path is not inside {_files.BasePath}.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
@@ -479,14 +483,14 @@ namespace StudiesFinal.Web.Controllers
             {
                 if (!System.IO.File.Exists(path))
                 {
-                    TempData["Error"] = $"No se encuentra el archivo: {path}";
+                    TempData["Error"] = $"File not found: {path}";
                     return RedirectToAction(nameof(Details), new { key = id });
                 }
             }
             catch (Exception ex)
             {
                 await LogError(nameof(OpenFile), ex, new { id, slot });
-                TempData["Error"] = "El servidor no tiene acceso a la carpeta de estudios.";
+                TempData["Error"] = "The server cannot access the studies folder.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
@@ -523,14 +527,14 @@ namespace StudiesFinal.Web.Controllers
                 study.SignedPdfPath = path;
                 await _repository.SaveChangesAsync();
 
-                await _logger.LogInformation($"PDF del estudio {study.Id} guardado", nameof(StudiesController), nameof(SaveSignedPdf), new { study.Id, path });
+                await _logger.LogInformation($"PDF of study {study.Id} saved", nameof(StudiesController), nameof(SaveSignedPdf), new { study.Id, path });
                 return null;
             }
             catch (Exception ex)
             {
                 await LogError(nameof(SaveSignedPdf), ex, new { study.Id });
-                return $"No se pudo guardar el PDF en {_files.FolderFor(study.StudyName)}: {ex.Message} " +
-                       "Puedes reintentarlo con \"Generar PDF\" cuando el servidor esté disponible.";
+                return $"The PDF could not be saved to {_files.FolderFor(study.StudyName)}: {ex.Message} " +
+                       "You can retry with \"Generate PDF\" when the server is available.";
             }
         }
         private async Task<IActionResult> ChangeStatus(int id, Func<Study, System.Security.Claims.ClaimsPrincipal, bool> canChange, StudyStatus target, string message)
@@ -541,7 +545,7 @@ namespace StudiesFinal.Web.Controllers
 
             if (!canChange(study, User))
             {
-                TempData["Error"] = "No se puede cambiar la fase de este estudio.";
+                TempData["Error"] = "The phase of this study cannot be changed.";
                 return RedirectToAction(nameof(Details), new { key = id });
             }
 
@@ -551,7 +555,7 @@ namespace StudiesFinal.Web.Controllers
             study.UpdatedByName = User.FullName();
 
             await _repository.SaveChangesAsync();
-            await _logger.LogInformation($"Estudio {id}: {from.Label()} → {target.Label()}", nameof(StudiesController), "ChangeStatus", new { id, from = from.ToString(), to = target.ToString() });
+            await _logger.LogInformation($"Study {id}: {from.Label()} → {target.Label()}", nameof(StudiesController), "ChangeStatus", new { id, from = from.ToString(), to = target.ToString() });
 
             TempData["Success"] = message;
             return RedirectToAction(nameof(Details), new { key = id });
@@ -593,7 +597,7 @@ namespace StudiesFinal.Web.Controllers
             foreach (var (name, value) in new[] { (nameof(model.LinkFile1), model.LinkFile1), (nameof(model.LinkFile2), model.LinkFile2), (nameof(model.LinkFile3), model.LinkFile3) })
             {
                 if (value != null && !_files.IsAllowed(value))
-                    ModelState.AddModelError(name, $"La ruta debe empezar por {_files.BasePath}\\");
+                    ModelState.AddModelError(name, $"The path must start with {_files.BasePath}\\");
             }
         }
 
@@ -623,7 +627,7 @@ namespace StudiesFinal.Web.Controllers
                 catch (Exception ex)
                 {
                     await LogError("Upload", ex, new { slot, file.FileName });
-                    ModelState.AddModelError($"Upload{slot}", $"No se pudo guardar el archivo en {_files.FolderFor(model.StudyName)}: {ex.Message}");
+                    ModelState.AddModelError($"Upload{slot}", $"The file could not be saved to {_files.FolderFor(model.StudyName)}: {ex.Message}");
                     return false;
                 }
             }

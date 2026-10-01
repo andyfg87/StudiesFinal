@@ -7,18 +7,18 @@ namespace StudiesFinal.Web.Models.ViewModels
 {
     public class PatientDisplayVM : IEntityDisplayModel<Patient, int>
     {
-        [Display(Name = "Nº paciente")]
+        [Display(Name = "Patient #")]
         public int Id { get; set; }
 
-        [Display(Name = "Nombre")]
+        [Display(Name = "Name")]
         public string? Name { get; set; }
 
-        [Display(Name = "Fecha de nacimiento")]
+        [Display(Name = "Date of birth")]
         public DateTime? DateOfBirth { get; set; }
 
         public int? Age => ListUi.Age(DateOfBirth);
 
-        [Display(Name = "Estudios")]
+        [Display(Name = "Studies")]
         public int StudyCount { get; set; }
 
         public DateTime? LastStudyDate { get; set; }
@@ -36,18 +36,18 @@ namespace StudiesFinal.Web.Models.ViewModels
     public class PatientInputVM : IEntityInputModel<Patient, int>
     {
         /// <summary>Nº de paciente (PatientID de Access). Se propone el siguiente libre.</summary>
-        [Required(ErrorMessage = "El número de paciente es obligatorio")]
-        [Range(1, int.MaxValue, ErrorMessage = "Número de paciente no válido")]
-        [Display(Name = "Nº paciente")]
+        [Required(ErrorMessage = "Patient number is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Invalid patient number")]
+        [Display(Name = "Patient #")]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "El nombre es obligatorio")]
+        [Required(ErrorMessage = "Name is required")]
         [StringLength(100)]
-        [Display(Name = "Nombre")]
+        [Display(Name = "Name")]
         public string? Name { get; set; }
 
         [DataType(DataType.Date)]
-        [Display(Name = "Fecha de nacimiento")]
+        [Display(Name = "Date of birth")]
         public DateTime? DateOfBirth { get; set; }
 
         /// <summary>true en edición: el Nº de paciente no se puede cambiar.</summary>

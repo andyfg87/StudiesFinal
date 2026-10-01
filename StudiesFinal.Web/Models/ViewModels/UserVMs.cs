@@ -29,37 +29,37 @@ namespace StudiesFinal.Web.Models.ViewModels
     {
         public Guid Id { get; set; }
 
-        [Required(ErrorMessage = "El usuario es obligatorio")]
+        [Required(ErrorMessage = "Username is required")]
         [StringLength(100)]
-        [Display(Name = "Usuario")]
+        [Display(Name = "Username")]
         public string UserName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El nombre es obligatorio")]
+        [Required(ErrorMessage = "First name is required")]
         [StringLength(100)]
-        [Display(Name = "Nombre")]
+        [Display(Name = "First name")]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Los apellidos son obligatorios")]
+        [Required(ErrorMessage = "Last name is required")]
         [StringLength(100)]
-        [Display(Name = "Apellidos")]
+        [Display(Name = "Last name")]
         public string LastName { get; set; } = string.Empty;
 
         /// <summary>Obligatoria al crear; al editar, vacía = no se cambia.</summary>
         [DataType(DataType.Password)]
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "Mínimo 8 caracteres")]
-        [Display(Name = "Contraseña")]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Minimum 8 characters")]
+        [Display(Name = "Password")]
         public string? Password { get; set; }
 
         [DataType(DataType.Password)]
-        [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden")]
-        [Display(Name = "Confirmar contraseña")]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
+        [Display(Name = "Confirm password")]
         public string? ConfirmPassword { get; set; }
 
         [Required]
-        [Display(Name = "Rol")]
+        [Display(Name = "Role")]
         public UserRole Role { get; set; } = UserRole.Technician;
 
-        [Display(Name = "Activo")]
+        [Display(Name = "Active")]
         public bool IsActive { get; set; } = true;
 
         public bool IsEdit { get; set; }
@@ -96,35 +96,35 @@ namespace StudiesFinal.Web.Models.ViewModels
 
     public class LoginVM
     {
-        [Required(ErrorMessage = "El usuario es obligatorio")]
-        [Display(Name = "Usuario")]
+        [Required(ErrorMessage = "Username is required")]
+        [Display(Name = "Username")]
         public string Username { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es obligatoria")]
+        [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
-        [Display(Name = "Contraseña")]
+        [Display(Name = "Password")]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "Recordarme")]
+        [Display(Name = "Remember me")]
         public bool RememberMe { get; set; }
     }
 
     public class ChangePasswordVM
     {
-        [Required(ErrorMessage = "Escribe tu contraseña actual")]
+        [Required(ErrorMessage = "Enter your current password")]
         [DataType(DataType.Password)]
-        [Display(Name = "Contraseña actual")]
+        [Display(Name = "Current password")]
         public string CurrentPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Escribe la nueva contraseña")]
+        [Required(ErrorMessage = "Enter the new password")]
         [DataType(DataType.Password)]
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "Mínimo 8 caracteres")]
-        [Display(Name = "Nueva contraseña")]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Minimum 8 characters")]
+        [Display(Name = "New password")]
         public string NewPassword { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
-        [Compare(nameof(NewPassword), ErrorMessage = "Las contraseñas no coinciden")]
-        [Display(Name = "Confirmar nueva contraseña")]
+        [Compare(nameof(NewPassword), ErrorMessage = "Passwords do not match")]
+        [Display(Name = "Confirm new password")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

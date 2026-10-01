@@ -10,38 +10,38 @@ namespace StudiesFinal.Web.Models.ViewModels
     {
         public int Id { get; set; }
 
-        [Display(Name = "Fecha")]
+        [Display(Name = "Date")]
         public DateTime StudyDate { get; set; }
 
-        [Display(Name = "Estudio")]
+        [Display(Name = "Study")]
         public string? StudyName { get; set; }
 
-        [Display(Name = "Informe")]
+        [Display(Name = "Report")]
         public string? Information { get; set; }
 
         public int PatientId { get; set; }
 
-        [Display(Name = "Paciente")]
+        [Display(Name = "Patient")]
         public string? PatientName { get; set; }
 
         public DateTime? PatientDateOfBirth { get; set; }
 
         public int? PatientAge => ListUi.Age(PatientDateOfBirth, StudyDate);
 
-        [Display(Name = "Estado")]
+        [Display(Name = "Status")]
         public StudyStatus Status { get; set; }
 
-        [Display(Name = "Procesado")]
+        [Display(Name = "Processed")]
         public bool Processed { get; set; }
 
         public string? LinkFile1 { get; set; }
         public string? LinkFile2 { get; set; }
         public string? LinkFile3 { get; set; }
 
-        [Display(Name = "Firmado")]
+        [Display(Name = "Signed")]
         public DateTime? SignedAt { get; set; }
 
-        [Display(Name = "Firmado por")]
+        [Display(Name = "Signed by")]
         public string? SignedByName { get; set; }
 
         /// <summary>null en las firmas importadas de Access.</summary>
@@ -94,43 +94,43 @@ namespace StudiesFinal.Web.Models.ViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "La fecha es obligatoria")]
+        [Required(ErrorMessage = "Date is required")]
         [DataType(DataType.Date)]
-        [Display(Name = "Fecha del estudio")]
+        [Display(Name = "Study date")]
         public DateTime StudyDate { get; set; } = DateTime.Today;
 
-        [Required(ErrorMessage = "Selecciona un paciente")]
-        [Range(0, int.MaxValue, ErrorMessage = "Selecciona un paciente")]
-        [Display(Name = "Paciente")]
+        [Required(ErrorMessage = "Select a patient")]
+        [Range(0, int.MaxValue, ErrorMessage = "Select a patient")]
+        [Display(Name = "Patient")]
         public int? PatientId { get; set; }
 
         /// <summary>Solo para mostrar el paciente elegido en el formulario.</summary>
         public string? PatientLabel { get; set; }
 
-        [Display(Name = "Plantilla")]
+        [Display(Name = "Template")]
         public int? TemplateId { get; set; }
 
-        [Required(ErrorMessage = "El nombre del estudio es obligatorio")]
+        [Required(ErrorMessage = "Study name is required")]
         [StringLength(50)]
-        [Display(Name = "Estudio")]
+        [Display(Name = "Study")]
         public string? StudyName { get; set; }
 
-        [Display(Name = "Informe")]
+        [Display(Name = "Report")]
         public string? Information { get; set; }
 
-        [Display(Name = "Procesado")]
+        [Display(Name = "Processed")]
         public bool Processed { get; set; }
 
         [StringLength(400)]
-        [Display(Name = "Archivo 1")]
+        [Display(Name = "File 1")]
         public string? LinkFile1 { get; set; }
 
         [StringLength(400)]
-        [Display(Name = "Archivo 2")]
+        [Display(Name = "File 2")]
         public string? LinkFile2 { get; set; }
 
         [StringLength(400)]
-        [Display(Name = "Archivo 3")]
+        [Display(Name = "File 3")]
         public string? LinkFile3 { get; set; }
 
         // Archivos subidos desde el navegador (se guardan en el servidor de estudios)

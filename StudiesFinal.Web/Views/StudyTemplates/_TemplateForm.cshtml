@@ -25,14 +25,14 @@
                 </div>
             </div>
 
-            <label class="form-label">Contenido</label>
+            <label class="form-label">Content</label>
             <input type="hidden" asp-for="StudyInfo" />
             <partial name="_RichEditor" model="@("StudyInfo")" />
         </div>
     </div>
 
     <div class="sf-sticky-actions d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1" aria-hidden="true"></i>Guardar</button>
-        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1" aria-hidden="true"></i>Save</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </div>
 </form>

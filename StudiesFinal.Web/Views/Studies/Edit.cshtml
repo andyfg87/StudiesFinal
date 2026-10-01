@@ -1,23 +1,23 @@
 @model StudyInputVM
 @{
-    ViewData["Title"] = $"Editar estudio {Model.Id}";
+    ViewData["Title"] = $"Edit study {Model.Id}";
 }
 
 @section Styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@@2.0.3/dist/quill.snow.css" />
 }
 
-<nav class="crumbs" aria-label="Migas">
-    <a asp-action="Index" asp-route-status="@Model.Status">Estudios · @Model.Status.Label()</a> /
-    <a asp-action="Details" asp-route-key="@Model.Id">Nº @Model.Id</a> /
-    <span>Editar</span>
+<nav class="crumbs" aria-label="Breadcrumb">
+    <a asp-action="Index" asp-route-status="@Model.Status">Studies · @Model.Status.Label()</a> /
+    <a asp-action="Details" asp-route-key="@Model.Id">#@Model.Id</a> /
+    <span>Edit</span>
 </nav>
 
 <div class="ls-head">
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-pencil-square"></i></span>
         <div>
-            <h2>Editar estudio</h2>
+            <h2>Edit study</h2>
             <div class="ls-sub">@Model.PatientLabel</div>
         </div>
     </div>

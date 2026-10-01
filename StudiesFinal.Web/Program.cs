@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // SQL Server: LocalDB en desarrollo (appsettings.json) y SERVER01\SQLEXPRESS en el
 // servidor (appsettings.Production.json).
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection en appsettings.json.");
+    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is missing in appsettings.json.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -37,7 +37,7 @@ builder.Services.AddScoped<IAppLogger, DatabaseLogger>();
 builder.Services.AddOptions<StudyFilesOptions>()
     .Bind(builder.Configuration.GetSection(StudyFilesOptions.Section))
     .Validate(o => !string.IsNullOrWhiteSpace(o.BasePath) || !string.IsNullOrWhiteSpace(o.Server),
-        "Falta StudyFiles:Server en appsettings.json (IP del servidor de archivos de los estudios).")
+        "StudyFiles:Server is missing in appsettings.json (IP of the studies file server).")
     .ValidateOnStart();
 builder.Services.AddScoped<IStudyFileService, StudyFileService>();
 builder.Services.AddSingleton<IRichTextSanitizer, RichTextSanitizer>();
@@ -68,7 +68,19 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DoctorOnly", policy => policy.RequireRole(Roles.Doctor));
 });
 
+// Interfaz en inglés y fechas MM/dd/yyyy, sin depender del idioma de Windows del servidor
+var enUs = new System.Globalization.CultureInfo("en-US");
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = enUs;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = enUs;
+
 var app = builder.Build();
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture(enUs),
+    SupportedCultures = new[] { enUs },
+    SupportedUICultures = new[] { enUs }
+});
 
 await DbInitializer.InitializeAsync(app.Services, app.Configuration, app.Logger);
 

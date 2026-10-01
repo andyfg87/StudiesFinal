@@ -2,23 +2,24 @@
 @model PaginatedList<PatientDisplayVM>
 
 @{
-    ViewData["Title"] = "Pacientes";
+    ViewData["Title"] = "Patients";
     var fSearch = Context.Request.Query["search"].ToString();
-    var hasFilters = !string.IsNullOrEmpty(fSearch);
+    var fDob = Context.Request.Query["dob"].ToString();
+    var hasFilters = !string.IsNullOrEmpty(fSearch) || !string.IsNullOrEmpty(fDob);
 }
 
 <div class="ls-head">
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-people"></i></span>
         <div>
-            <h2>Pacientes</h2>
-            <div class="ls-sub">@Model.TotalCount @(Model.TotalCount == 1 ? "paciente" : "pacientes")</div>
+            <h2>Patients</h2>
+            <div class="ls-sub">@Model.TotalCount @(Model.TotalCount == 1 ? "patient" : "patients")</div>
         </div>
     </div>
 
     <div class="d-flex flex-wrap gap-2">
         <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Nuevo paciente
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>New patient
         </a>
     </div>
 </div>
@@ -27,21 +28,26 @@
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-12 col-md-6 col-lg-5">
-                <label for="search" class="form-label">Buscar</label>
+                <label for="search" class="form-label">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
                     <input type="search" class="form-control" id="search" name="search"
-                           placeholder="Nombre o nº de paciente…" value="@fSearch" autofocus />
+                           placeholder="Name or patient #…" value="@fSearch" autofocus />
                 </div>
+            </div>
+
+            <div class="col-12 col-md-4 col-lg-2">
+                <label for="dob" class="form-label">Date of birth</label>
+                <input type="date" class="form-control" id="dob" name="dob" value="@fDob" />
             </div>
 
             <div class="col-12 col-md-4 col-lg-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-fill">
-                    <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtrar
+                    <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter
                 </button>
                 @if (hasFilters)
                 {
-                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary" title="Limpiar filtros" aria-label="Limpiar filtros">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary" title="Clear filters" aria-label="Clear filters">
                         <i class="bi bi-x-lg" aria-hidden="true"></i>
                     </a>
                 }
@@ -55,12 +61,12 @@
         <table class="table table-hover align-middle ls-table mb-0">
             <thead>
                 <tr>
-                    <th>@Html.SortHeader("Nº", "id")</th>
-                    <th>@Html.SortHeader("Nombre", "name")</th>
-                    <th>@Html.SortHeader("Nacimiento", "dob")</th>
-                    <th class="text-center">@Html.SortHeader("Estudios", "studies")</th>
-                    <th>@Html.SortHeader("Último estudio", "last")</th>
-                    <th class="text-end"><span class="visually-hidden">Acciones</span></th>
+                    <th>@Html.SortHeader("#", "id")</th>
+                    <th>@Html.SortHeader("Name", "name")</th>
+                    <th>@Html.SortHeader("Date of birth", "dob")</th>
+                    <th class="text-center">@Html.SortHeader("Studies", "studies")</th>
+                    <th>@Html.SortHeader("Last study", "last")</th>
+                    <th class="text-end"><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -69,10 +75,10 @@
                     <tr>
                         <td colspan="6" class="text-center py-5">
                             <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50" aria-hidden="true"></i>
-                            <div class="fw-semibold">No hay pacientes que coincidan</div>
+                            <div class="fw-semibold">No patients match the filters</div>
                             @if (hasFilters)
                             {
-                                <a href="@Url.Action("Index")" class="small">Quitar filtros</a>
+                                <a href="@Url.Action("Index")" class="small">Clear filters</a>
                             }
                         </td>
                     </tr>
@@ -81,34 +87,34 @@
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td data-label="Nº" class="text-muted">@item.Id</td>
-                        <td data-label="Nombre">
+                        <td data-label="#" class="text-muted">@item.Id</td>
+                        <td data-label="Name">
                             <div class="ls-device">
                                 <span class="ls-tile" aria-hidden="true"><i class="bi bi-person"></i></span>
-                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.Name ?? "(sin nombre)")</a>
+                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.Name ?? "(no name)")</a>
                             </div>
                         </td>
-                        <td data-label="Nacimiento" class="text-nowrap">
+                        <td data-label="Date of birth" class="text-nowrap">
                             @item.DateOfBirth?.ToString("MM/dd/yyyy")
                             @if (item.Age.HasValue)
                             {
-                                <span class="text-muted small">· @item.Age años</span>
+                                <span class="text-muted small">· @item.Age years</span>
                             }
                         </td>
-                        <td data-label="Estudios" class="text-center">@item.StudyCount</td>
-                        <td data-label="Último estudio">@item.LastStudyDate?.ToString("MM/dd/yyyy")</td>
+                        <td data-label="Studies" class="text-center">@item.StudyCount</td>
+                        <td data-label="Last study">@item.LastStudyDate?.ToString("MM/dd/yyyy")</td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-1">
                                 <a asp-controller="Studies" asp-action="Create" asp-route-patientId="@item.Id" class="btn btn-sm btn-outline-secondary"
-                                   title="Nuevo estudio" aria-label="Nuevo estudio para @item.Name">
+                                   title="New study" aria-label="New study for @item.Name">
                                     <i class="bi bi-file-earmark-plus" aria-hidden="true"></i>
                                 </a>
                                 <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-outline-secondary"
-                                   title="Editar" aria-label="Editar @item.Name">
+                                   title="Edit" aria-label="Edit @item.Name">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 <a asp-action="Details" asp-route-key="@item.Id" class="btn btn-sm btn-outline-primary text-nowrap">
-                                    Ver <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                    View <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                 </a>
                             </div>
                         </td>

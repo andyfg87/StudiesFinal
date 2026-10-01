@@ -1,24 +1,24 @@
 @model PatientDisplayVM
 @{
-    ViewData["Title"] = Model.Name ?? $"Paciente {Model.Id}";
+    ViewData["Title"] = Model.Name ?? $"Patient {Model.Id}";
     var studies = ViewBag.Studies as List<StudyDisplayVM> ?? new();
     var isAdmin = User.IsInRole(Roles.Admin);
 }
 
-<nav class="crumbs" aria-label="Migas">
-    <a asp-action="Index">Pacientes</a> / <span>@Model.Name</span>
+<nav class="crumbs" aria-label="Breadcrumb">
+    <a asp-action="Index">Patients</a> / <span>@Model.Name</span>
 </nav>
 
 <div class="ls-head">
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-person"></i></span>
         <div>
-            <h2>@(Model.Name ?? "(sin nombre)")</h2>
+            <h2>@(Model.Name ?? "(no name)")</h2>
             <div class="ls-sub">
-                Nº @Model.Id
+                Patient # @Model.Id
                 @if (Model.DateOfBirth.HasValue)
                 {
-                    <span> · Nacimiento @Model.DateOfBirth.Value.ToString("MM/dd/yyyy") (@Model.Age años)</span>
+                    <span> · Date of birth @Model.DateOfBirth.Value.ToString("MM/dd/yyyy") (@Model.Age years)</span>
                 }
             </div>
         </div>
@@ -26,15 +26,15 @@
 
     <div class="d-flex flex-wrap gap-2">
         <a asp-controller="Studies" asp-action="Create" asp-route-patientId="@Model.Id" class="btn btn-primary">
-            <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>Nuevo estudio
+            <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>New study
         </a>
         <a asp-action="Edit" asp-route-key="@Model.Id" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
         </a>
         @if (isAdmin && !studies.Any())
         {
-            <form asp-action="DeletePatient" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('¿Eliminar este paciente?');">
-                <button type="submit" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar paciente">
+            <form asp-action="DeletePatient" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Delete this patient?');">
+                <button type="submit" class="btn btn-outline-danger" title="Delete" aria-label="Delete patient">
                     <i class="bi bi-trash3" aria-hidden="true"></i>
                 </button>
             </form>
@@ -44,46 +44,46 @@
 
 <div class="card shadow-sm">
     <div class="card-body pb-0">
-        <h3 class="h6 mb-0">Estudios (@studies.Count)</h3>
+        <h3 class="h6 mb-0">Studies (@studies.Count)</h3>
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle ls-table mb-0">
             <thead>
                 <tr>
-                    <th>Nº</th>
-                    <th>Fecha</th>
-                    <th>Estudio</th>
-                    <th>Estado</th>
-                    <th>Firmado</th>
-                    <th class="text-center">Archivos</th>
-                    <th class="text-end"><span class="visually-hidden">Acciones</span></th>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Study</th>
+                    <th>Status</th>
+                    <th>Signed</th>
+                    <th class="text-center">Files</th>
+                    <th class="text-end"><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 @if (!studies.Any())
                 {
-                    <tr><td colspan="7" class="text-center py-4 text-muted">Este paciente no tiene estudios.</td></tr>
+                    <tr><td colspan="7" class="text-center py-4 text-muted">This patient has no studies.</td></tr>
                 }
                 @foreach (var s in studies)
                 {
                     <tr>
-                        <td data-label="Nº" class="text-muted">@s.Id</td>
-                        <td data-label="Fecha" class="text-nowrap">@s.StudyDate.ToString("MM/dd/yyyy")</td>
-                        <td data-label="Estudio">@s.StudyName</td>
-                        <td data-label="Estado">@Html.StatusPill(s.Status)</td>
-                        <td data-label="Firmado" class="small">@s.SignedAt?.ToString("MM/dd/yyyy") <span class="text-muted">@s.SignedByName</span></td>
-                        <td data-label="Archivos" class="text-center">
+                        <td data-label="#" class="text-muted">@s.Id</td>
+                        <td data-label="Date" class="text-nowrap">@s.StudyDate.ToString("MM/dd/yyyy")</td>
+                        <td data-label="Study">@s.StudyName</td>
+                        <td data-label="Status">@Html.StatusPill(s.Status)</td>
+                        <td data-label="Signed" class="small">@s.SignedAt?.ToString("MM/dd/yyyy") <span class="text-muted">@s.SignedByName</span></td>
+                        <td data-label="Files" class="text-center">
                             @foreach (var link in s.Links)
                             {
                                 <a asp-controller="Studies" asp-action="OpenFile" asp-route-id="@s.Id" asp-route-slot="@link.Slot" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-link px-1" title="@link.Path" aria-label="Abrir archivo @link.Slot">
+                                   class="btn btn-sm btn-link px-1" title="@link.Path" aria-label="Open file @link.Slot">
                                     <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
                                 </a>
                             }
                         </td>
                         <td class="text-end">
                             <a asp-controller="Studies" asp-action="Details" asp-route-key="@s.Id" class="btn btn-sm btn-outline-primary text-nowrap">
-                                Ver <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                View <i class="bi bi-chevron-right" aria-hidden="true"></i>
                             </a>
                         </td>
                     </tr>
