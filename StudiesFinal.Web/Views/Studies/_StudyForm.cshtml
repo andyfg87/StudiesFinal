@@ -89,7 +89,7 @@
                         <div class="mb-3">
                             <label class="form-label small fw-semibold" for="@linkName">File @slot</label>
                             <input class="form-control form-control-sm mb-1" id="@linkName" name="@linkName" value="@value"
-                                   placeholder="@basePath\Holter Report\HR-Patient-date.pdf" />
+                                   placeholder="@Files.FolderFor("Holter Report")\HR-Patient-date.pdf" />
                             <input class="form-control form-control-sm" type="file" id="@uploadName" name="@uploadName" aria-label="Upload file @slot" />
                             <span class="text-danger small">@Html.ValidationMessage(linkName)</span>
                             <span class="text-danger small">@Html.ValidationMessage(uploadName)</span>

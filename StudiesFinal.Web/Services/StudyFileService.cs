@@ -58,6 +58,12 @@ namespace StudiesFinal.Web.Services
         /// </summary>
         public Dictionary<string, string> Prefixes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Carpeta dentro de la raíz donde van los informes y archivos subidos, una
+        /// subcarpeta por tipo de reporte: \\{Server}\{Share}\Studies Report\Holter Report
+        /// </summary>
+        public string ReportsFolder { get; set; } = "Studies Report";
+
         /// <summary>Carpeta para estudios sin tipo de reporte.</summary>
         public string DefaultFolder { get; set; } = "Other";
 
@@ -135,20 +141,25 @@ namespace StudiesFinal.Web.Services
         }
 
         /// <summary>
-        /// Carpeta = tipo de reporte: \\{Server}\{Share}\Holter Report
-        /// (salvo que StudyFiles:Folders indique otra para ese tipo).
+        /// Carpeta = tipo de reporte dentro de ReportsFolder:
+        /// \\{Server}\{Share}\Studies Report\Holter Report
+        /// (salvo que StudyFiles:Folders indique otra carpeta para ese tipo).
         /// </summary>
         public string FolderFor(string? studyName)
         {
+            var reports = string.IsNullOrWhiteSpace(_options.ReportsFolder)
+                ? BasePath
+                : Path.Combine(BasePath, _options.ReportsFolder.Trim().Trim('\\', '/'));
+
             var name = Sanitize(studyName);
             if (string.IsNullOrEmpty(name))
-                return Path.Combine(BasePath, _options.DefaultFolder);
+                return Path.Combine(reports, _options.DefaultFolder);
 
             var folder = _options.Folders.TryGetValue(name, out var custom) && !string.IsNullOrWhiteSpace(custom)
                 ? custom
                 : name;
 
-            return Path.Combine(BasePath, folder);
+            return Path.Combine(reports, folder);
         }
 
         /// <summary>Iniciales del tipo de reporte: "Holter Report" -> "HR" (o StudyFiles:Prefixes).</summary>

@@ -37,26 +37,26 @@ El servidor de archivos se configura en `appsettings.json`:
 ```json
 "StudyFiles": {
   "Server": "192.168.199.140",
-  "Share": "Studies"
+  "Share": "Fileserver\\Studies",
+  "ReportsFolder": "Studies Report"
 }
 ```
 
-Los links se guardan como ruta completa y siempre bajo `\\{Server}\{Share}`
-(`\\192.168.199.140\Studies`). Para pruebas se puede poner `StudyFiles:BasePath` con una
-carpeta local, que tiene prioridad sobre `Server`/`Share`. Las rutas antiguas (`Z:\Studies`, `\\192.168.199.170\Studies`,
-`\\192.168.199.227\FileServer\Studies`…) se reescriben al importar y al guardar
-(`StudyFiles:LegacyPrefixes`). La web sirve los archivos desde el servidor en
-`/Studies/OpenFile`, así que **la cuenta con la que corre la web necesita acceso de lectura
-(y escritura para las subidas) a esa carpeta compartida**.
-
-Los archivos subidos se guardan en la carpeta del tipo de reporte, con las iniciales del
-reporte, el paciente y la fecha de hoy:
+- Raíz de los estudios: `\\192.168.199.140\Fileserver\Studies` (la unidad `Z:\Studies` de los
+  equipos). Todos los links deben estar debajo de esa ruta; las rutas antiguas (`Z:\Studies`,
+  `\\192.168.199.170\Studies`, …) se reescriben a ella (`StudyFiles:LegacyPrefixes`).
+- Los PDF firmados y los archivos subidos van a `ReportsFolder`, una carpeta por tipo de reporte:
 
 ```
-\\192.168.199.140\Studies\Holter Report\HR-Angulo Juan-09-30-2026.pdf
+\\192.168.199.140\Fileserver\Studies\Studies Report\Holter Report\HR-Angulo Juan-09-30-2026.pdf
 ```
 
-Si ese día ya existe, se añade ` (2)`, ` (3)`…
+  Si ese día ya existe, se añade ` (2)`, ` (3)`… Cuando la carpeta del servidor no se llama igual
+  que el tipo de estudio, se indica en `StudyFiles:Folders` (p. ej. "Exercise Stress Test Protocol
+  Report" → "Excercise Stress Test Protocol Report"). Las iniciales del archivo se pueden cambiar
+  en `StudyFiles:Prefixes`.
+- La web sirve los archivos desde el servidor en `/Studies/OpenFile`, así que **la cuenta con la que
+  corre la web necesita lectura y escritura en esa carpeta compartida**.
 
 **PDF del informe al firmar:** cuando el doctor firma, se genera el PDF del informe
 (mismo formato que la plantilla de Access: logo, cabecera del médico, firma electrónica y
@@ -64,9 +64,6 @@ Si ese día ya existe, se añade ` (2)`, ` (3)`…
 en `Study.SignedPdfPath`. Si el servidor no está disponible, la firma se mantiene y desde el
 detalle del estudio se puede usar "Generar PDF" para reintentarlo. Los datos del médico están
 en la sección `Report` de `appsettings.json`; la fuente Calibri se toma de `C:\Windows\Fonts`.
-
-Para cambiar la carpeta o las iniciales de un tipo concreto: `StudyFiles:Folders` y
-`StudyFiles:Prefixes` (clave = nombre del reporte).
 
 ## Base de datos: SQL Server
 
