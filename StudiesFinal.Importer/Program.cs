@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using StudiesFinal.Models.EF;
 using StudiesFinal.Models.Entities;
+using StudiesFinal.Models.Files;
 using System.Data.OleDb;
 using System.Globalization;
 
@@ -10,29 +11,38 @@ using System.Globalization;
 // de la web (LocalDB en desarrollo, SERVER01\SQLEXPRESS en el servidor).
 //
 //   dotnet run --project StudiesFinal.Importer -- --source "ruta\StudiesFinal1_be.accdb" [--replace]
+//   dotnet run --project StudiesFinal.Importer -- --relink
 //
-// Usa la MISMA configuración que la web (StudiesFinal.Webppsettings.json +
+// Usa la MISMA configuración que la web (StudiesFinal.Web\appsettings.json +
 // appsettings.{entorno}.json). El entorno por defecto es Production, igual que la
 // web en el servidor (appsettings.Production.json).
 //
 // Opciones:
 //   --environment Development   usa la base de desarrollo (LocalDB de appsettings.json)
 //   --connection "..."          importa a otra base de SQL Server
-//   --settings "rutappsettings.json"   otra carpeta de configuración
+//   --settings "ruta\appsettings.json"   otra carpeta de configuración
 //   --replace   borra antes estudios, pacientes y plantillas
+//   --relink    no importa: solo recoloca los links de los estudios que ya hay en la base
 //
 // - Conserva los Id de Access (PatientID, ID de estudio y de plantilla).
 // - Estado/isComplete -> Status; Signature (fecha) -> SignedAt.
-// - Reescribe las rutas antiguas (Z:\Studies, \\192.168.199.170\Studies…) al
-//   servidor configurado en StudyFiles:Server / StudyFiles:Share (\\<IP>\Studies).
+// - Links: reescribe las rutas antiguas (Z:\Studies, \\192.168.199.170\Studies…) y los
+//   lleva a la carpeta del tipo de reporte:
+//     Z:\Studies\Stress Test Treadmill\X.pdf
+//       -> \\192.168.199.140\Fileserver\Studies\Studies Report\<tipo de reporte>\X.pdf
+//   (misma regla que la web: StudiesFinal.Models.Files.StudyFilePaths)
 // - No toca usuarios ni registros de actividad.
 // =========================================================================
 
 var options = ParseArgs(args);
-if (!options.TryGetValue("source", out var source) || !File.Exists(source))
+var relinkOnly = options.ContainsKey("relink");
+options.TryGetValue("source", out var source);
+
+if (!relinkOnly && (source == null || !File.Exists(source)))
 {
     Console.Error.WriteLine("Usage: --source <StudiesFinal1_be.accdb> [--replace] [--environment Production|Development] " +
                             "[--connection \"...\"] [--settings <appsettings.json>]");
+    Console.Error.WriteLine("       --relink [--environment ...] [--connection \"...\"]   (only moves existing links to Studies Report)");
     return 1;
 }
 
@@ -58,35 +68,76 @@ if (string.IsNullOrWhiteSpace(connectionString))
     return 1;
 }
 
-// Misma configuración que la web: StudyFiles:Server (IP) + StudyFiles:Share, o StudyFiles:BasePath
-var basePath = config["StudyFiles:BasePath"];
-if (string.IsNullOrWhiteSpace(basePath))
+// Rutas de archivos: misma sección StudyFiles y mismas reglas que la web
+var fileOptions = new StudyFilesOptions();
+config.GetSection(StudyFilesOptions.Section).Bind(fileOptions);
+StudyFilePaths paths;
+try
 {
-    var server = config["StudyFiles:Server"]?.Trim().Trim('\\');
-    if (string.IsNullOrWhiteSpace(server))
-    {
-        Console.Error.WriteLine($"StudyFiles:Server is missing in {settingsPath}.");
-        return 1;
-    }
-    var share = (config["StudyFiles:Share"] ?? "Studies").Trim().Trim('\\', '/');
-    basePath = $@"\\{server}\{share}";
+    paths = new StudyFilePaths(fileOptions);
 }
-basePath = basePath.TrimEnd('\\');
-var legacyPrefixes = config.GetSection("StudyFiles:LegacyPrefixes").Get<string[]>()
-                     ?? new[] { @"Z:\Studies", @"Y:\Studies", @"\\192.168.199.170\Studies" };
+catch (InvalidOperationException ex)
+{
+    Console.Error.WriteLine($"{ex.Message} ({settingsPath})");
+    return 1;
+}
 
-Console.WriteLine($"Source     : {source}");
+if (!relinkOnly)
+    Console.WriteLine($"Source     : {source}");
 Console.WriteLine($"Environment: {environment}");
 Console.WriteLine($"Target     : SQL Server · {DescribeConnection(connectionString)}");
-Console.WriteLine($"Links      : {string.Join(", ", legacyPrefixes)} -> {basePath}");
+Console.WriteLine($"Links      : {string.Join(", ", paths.LegacyPrefixes)} -> {paths.ReportsRoot}\\<report type>");
 
 var dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
     .UseSqlServer(connectionString, sql => sql.CommandTimeout(120))
     .Options;
 await using var db = new ApplicationDbContext(dbOptions);
 
+// LocalDB (desarrollo): arrancarla antes de conectar; con SQL Server normal no hace nada
+try
+{
+    var started = LocalDbStarter.EnsureStarted(connectionString);
+    if (started != null) Console.WriteLine(started);
+}
+catch (InvalidOperationException ex)
+{
+    Console.Error.WriteLine(ex.Message);
+    return 1;
+}
+
 // Crea la base de datos si no existe y aplica las migraciones
 await db.Database.MigrateAsync();
+
+// Link de un estudio: ruta limpia, en la carpeta de su tipo de reporte y con 400 caracteres como máximo
+string? Link(string? raw, string? studyName)
+{
+    var relocated = paths.Relocate(raw, studyName);
+    return relocated is { Length: > 400 } ? relocated[..400] : relocated;
+}
+
+// =========================================================================
+//  --relink: recoloca los links de los estudios que ya están en la base
+// =========================================================================
+if (relinkOnly)
+{
+    int changed = 0, links = 0;
+    var all = await db.Studies.ToListAsync();
+    foreach (var s in all)
+    {
+        var before = (s.LinkFile1, s.LinkFile2, s.LinkFile3);
+        s.LinkFile1 = Link(s.LinkFile1, s.StudyName);
+        s.LinkFile2 = Link(s.LinkFile2, s.StudyName);
+        s.LinkFile3 = Link(s.LinkFile3, s.StudyName);
+
+        var n = (before.LinkFile1 != s.LinkFile1 ? 1 : 0) + (before.LinkFile2 != s.LinkFile2 ? 1 : 0) + (before.LinkFile3 != s.LinkFile3 ? 1 : 0);
+        if (n > 0) { changed++; links += n; }
+    }
+    await db.SaveChangesAsync();
+
+    Console.WriteLine($"Studies updated: {changed} ({links} links moved to {paths.ReportsRoot})");
+    Console.WriteLine("Relink finished.");
+    return 0;
+}
 
 // La conexión queda abierta toda la importación para que SET IDENTITY_INSERT
 // (que es de sesión) se aplique a los INSERT de EF.
@@ -122,7 +173,7 @@ if (await db.Studies.AnyAsync() || await db.Patients.AnyAsync() || await db.Stud
     await db.StudyTemplates.ExecuteDeleteAsync();
 }
 
-using var access = OpenAccess(source);
+using var access = OpenAccess(source!);
 db.ChangeTracker.AutoDetectChangesEnabled = false;
 var us = CultureInfo.GetCultureInfo("en-US");
 
@@ -167,7 +218,7 @@ db.ChangeTracker.Clear();
 Console.WriteLine($"Patients: {patientIds.Count}");
 
 // ---- Estudios ------------------------------------------------------------------
-int studies = 0, orphans = 0, noDate = 0, rewritten = 0;
+int studies = 0, orphans = 0, noDate = 0, relocated = 0;
 var statusCount = new Dictionary<StudyStatus, int>();
 
 await WithExplicitIds<Study>(async () =>
@@ -193,12 +244,13 @@ await WithExplicitIds<Study>(async () =>
         var studyDate = r["StudyDate"] is DateTime d ? d.Date : (DateTime?)null;
         if (studyDate == null) noDate++;
 
-        string? Link(object value)
+        var studyName = Str(r["StudyName"], 50);
+
+        string? StudyLink(object value)
         {
-            var raw = Str(value);
-            var normalized = NormalizeLink(raw, basePath, legacyPrefixes);
-            if (raw != null && normalized != null && !normalized.Equals(raw, StringComparison.OrdinalIgnoreCase)) rewritten++;
-            return normalized is { Length: > 400 } ? normalized[..400] : normalized;
+            var link = Link(Str(value), studyName);
+            if (link != null && link.StartsWith(paths.ReportsRoot + "\\", StringComparison.OrdinalIgnoreCase)) relocated++;
+            return link;
         }
 
         db.Studies.Add(new Study
@@ -207,12 +259,12 @@ await WithExplicitIds<Study>(async () =>
             StudyDate = studyDate ?? new DateTime(1900, 1, 1),
             Information = Str(r["Information"]),
             PatientId = patientId,
-            StudyName = Str(r["StudyName"], 50),
+            StudyName = studyName,
             Status = status,
             Processed = string.Equals(Str(r["Processed"]), "Yes", StringComparison.OrdinalIgnoreCase),
-            LinkFile1 = Link(r["LinkFile1"]),
-            LinkFile2 = Link(r["LinkFile2"]),
-            LinkFile3 = Link(r["LinkFile3"]),
+            LinkFile1 = StudyLink(r["LinkFile1"]),
+            LinkFile2 = StudyLink(r["LinkFile2"]),
+            LinkFile3 = StudyLink(r["LinkFile3"]),
             SignedAt = status == StudyStatus.Completed ? signedAt : null,
             SignedByName = status == StudyStatus.Completed ? "Signature imported from Access" : null,
             CreatedAt = studyDate ?? DateTime.Now,
@@ -228,7 +280,7 @@ Console.WriteLine($"Studies: {studies}  (In progress {statusCount.GetValueOrDefa
                   $"To sign {statusCount.GetValueOrDefault(StudyStatus.ToSign)}, Completed {statusCount.GetValueOrDefault(StudyStatus.Completed)})");
 Console.WriteLine($"Patients created for orphan studies: {orphans}");
 Console.WriteLine($"Studies without date (set to 01/01/1900): {noDate}");
-Console.WriteLine($"Links rewritten to {basePath}: {rewritten}");
+Console.WriteLine($"Links placed in {paths.ReportsRoot}: {relocated}");
 Console.WriteLine("Import finished.");
 return 0;
 
@@ -275,30 +327,6 @@ static string? Str(object value, int? max = null)
     var s = value.ToString()!.Trim();
     if (s.Length == 0) return null;
     return max.HasValue && s.Length > max.Value ? s[..max.Value] : s;
-}
-
-// Mismo criterio que StudyFileService.Normalize en la web
-static string? NormalizeLink(string? path, string basePath, string[] legacyPrefixes)
-{
-    if (string.IsNullOrWhiteSpace(path)) return null;
-
-    var p = path.Trim().Trim('"').Replace('/', '\\');
-
-    // Hipervínculo de Access: "texto#dirección#"
-    if (p.Contains('#'))
-    {
-        var parts = p.Split('#');
-        p = parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]) ? parts[1] : parts[0];
-    }
-
-    foreach (var prefix in legacyPrefixes)
-    {
-        var legacy = prefix.TrimEnd('\\');
-        if (p.StartsWith(legacy + "\\", StringComparison.OrdinalIgnoreCase))
-            return basePath + p[legacy.Length..];
-    }
-
-    return p;
 }
 
 static Dictionary<string, string> ParseArgs(string[] args)

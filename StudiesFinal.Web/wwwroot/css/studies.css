@@ -137,6 +137,28 @@
     .sf-file:hover { background: var(--surface-2); color: inherit; }
     .sf-file i { font-size: 1.3rem; color: var(--crit); flex: none; }
 
+/* Archivo con su ruta y acciones (Views/Studies/_StudyFileLink.cshtml) */
+.sf-file-item { display: grid; gap: .35rem; }
+
+.sf-file-path {
+    display: block;
+    font-size: .75rem;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border-radius: 6px;
+    padding: .25rem .5rem;
+    overflow-wrap: anywhere;
+    user-select: all; /* un clic selecciona toda la ruta */
+}
+
+.sf-file-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+.sf-file-actions .btn { white-space: nowrap; }
+
+/* En Editar, la tarjeta de archivos del estudio se queda a la vista al bajar por el formulario */
+@media (min-width: 1200px) {
+    .sf-study-files { position: sticky; top: 1rem; z-index: 5; }
+}
+
 /* ---- Firma ----------------------------------------------------------------- */
 .sf-signature {
     display: flex;

@@ -269,6 +269,10 @@ namespace StudiesFinal.Web.Controllers
             if (!ModelState.IsValid || !await SaveUploads(model, study, patient!))
             {
                 model.Status = study.Status;
+                // Los archivos ya guardados siguen visibles para consultarlos al corregir
+                var saved = new StudyInputVM();
+                saved.Import(study);
+                model.SavedFiles = saved.SavedFiles;
                 model.PatientLabel = patient != null ? $"{patient.Id} · {patient.Name}" : null;
                 ViewBag.CanSendToSign = StudyWorkflow.CanSendToSign(study, User);
                 return View(model);
@@ -463,8 +467,12 @@ namespace StudiesFinal.Web.Controllers
         /// <summary>
         /// Sirve el archivo enlazado desde el servidor de estudios. Solo rutas bajo
         /// \\{StudyFiles:Server}\{StudyFiles:Share}.
+        /// download = false: se abre en el visor del navegador (ventana o pestaña nueva).
+        /// download = true: se descarga y se abre con el lector de PDF instalado.
+        /// Siempre se abre en otra ventana, así que los errores se muestran en una
+        /// página propia y no en la del estudio.
         /// </summary>
-        public async Task<IActionResult> OpenFile(int id, int slot = 1)
+        public async Task<IActionResult> OpenFile(int id, int slot = 1, bool download = false)
         {
             var study = await _repository.GetByIdAsync(id);
             if (study == null)
@@ -474,32 +482,37 @@ namespace StudiesFinal.Web.Controllers
             var path = _files.Normalize(slot switch { 0 => study.SignedPdfPath, 2 => study.LinkFile2, 3 => study.LinkFile3, _ => study.LinkFile1 });
 
             if (!_files.IsAllowed(path))
-            {
-                TempData["Error"] = $"The file path is not inside {_files.BasePath}.";
-                return RedirectToAction(nameof(Details), new { key = id });
-            }
+                return FileError($"The file path is not inside {_files.BasePath}.", path);
 
             try
             {
                 if (!System.IO.File.Exists(path))
-                {
-                    TempData["Error"] = $"File not found: {path}";
-                    return RedirectToAction(nameof(Details), new { key = id });
-                }
+                    return FileError("File not found.", path);
             }
             catch (Exception ex)
             {
                 await LogError(nameof(OpenFile), ex, new { id, slot });
-                TempData["Error"] = "The server cannot access the studies folder.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return FileError("The server cannot access the studies folder.", path);
             }
 
             if (!new FileExtensionContentTypeProvider().TryGetContentType(path!, out var contentType))
                 contentType = "application/octet-stream";
 
-            // inline: los PDF se abren en el navegador
-            Response.Headers.ContentDisposition = $"inline; filename=\"{Path.GetFileName(path)}\"";
+            var fileName = Path.GetFileName(path!);
+            if (download)
+                return PhysicalFile(path!, contentType, fileName); // attachment
+
+            // inline: los PDF se abren en el visor del navegador
+            Response.Headers.ContentDisposition = $"inline; filename=\"{fileName}\"";
             return PhysicalFile(path!, contentType);
+        }
+
+        private ViewResult FileError(string message, string? path)
+        {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            ViewBag.Message = message;
+            ViewBag.Path = path;
+            return View("FileError");
         }
 
         /// <summary>Ruta donde se guardaría un archivo subido ahora (para mostrarla en el formulario).</summary>

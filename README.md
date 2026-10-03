@@ -89,6 +89,10 @@ dotnet run --project StudiesFinal.Web
   importador con `--environment Development` (ver abajo).
 - Si no hay usuarios, se crea el administrador de `SeedAdmin` (en desarrollo está en
   `appsettings.Development.json`, que no se sube a git).
+- Si LocalDB está detenida, la web y el importador la arrancan con `sqllocaldb start` antes de
+  conectar (`LocalDbStarter`). Así no se queda un `sqlservr.exe` huérfano al detener la depuración
+  en Visual Studio. Si aun así aparece *"SQL Server process failed to start"*:
+  `Get-Process sqlservr | Stop-Process -Force; sqllocaldb start MSSQLLocalDB`.
 
 ## Instalación en el servidor
 
@@ -118,7 +122,13 @@ dotnet run --project StudiesFinal.Importer -- --source "C:\ruta\StudiesFinal1_be
   Sin `--replace`, si la base ya tiene datos no hace nada.
 - Conserva los Id de Access (con `IDENTITY_INSERT`; los estudios nuevos siguen numerándose a partir
   del último importado). `Estado`/`isComplete` → fase; `Signature` → fecha de firma.
-- Los estudios cuyo paciente no existe en Access reciben un paciente "(Paciente N no encontrado en Access)".
+- Los estudios cuyo paciente no existe en Access reciben un paciente "(Patient N not found in Access)".
+- Links: las rutas antiguas se llevan a la carpeta del tipo de reporte, sustituyendo la carpeta de
+  primer nivel y conservando las subcarpetas:
+  `Z:\Studies\Stress Test Treadmill\X.pdf` → `\\192.168.199.140\Fileserver\Studies\Studies Report\<tipo>\X.pdf`.
+  La regla está en `StudiesFinal.Models/Files/StudyFilePaths.cs` (la misma que usa la web).
+- `--relink` (sin `--source`): no importa nada, solo recoloca así los links de los estudios que ya
+  están en la base. Se puede repetir sin problema.
 
 ## Migraciones
 

@@ -190,7 +190,7 @@
                             <div class="d-inline-flex gap-1">
                                 @if (item.Status == StudyStatus.ToSign && isDoctor)
                                 {
-                                    <a asp-action="Details" asp-route-key="@item.Id" class="btn btn-sm btn-primary text-nowrap">
+                                    <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-primary text-nowrap">
                                         <i class="bi bi-pen me-1" aria-hidden="true"></i>Review
                                     </a>
                                 }

@@ -105,7 +105,8 @@
             <div class="sf-signature mb-3">
                 <i class="bi bi-patch-check-fill fs-3" aria-hidden="true"></i>
                 <div>
-                    <div class="fw-semibold">Signed@(string.IsNullOrEmpty(Model.SignedByName) ? "" : $" by {Model.SignedByName}")</div>
+                    @* Las firmas importadas de Access no tienen usuario (SignedById vacío) *@
+                    <div class="fw-semibold">@(Model.SignedById.HasValue && !string.IsNullOrEmpty(Model.SignedByName) ? $"Signed by {Model.SignedByName}" : "Signed (imported from Access)")</div>
                     <div class="small">@Model.SignedAt?.ToString("MM/dd/yyyy h:mm tt")</div>
                 </div>
             </div>
@@ -116,11 +117,7 @@
                     <h3 class="h6">Signed report (PDF)</h3>
                     @if (!string.IsNullOrEmpty(Model.SignedPdfPath))
                     {
-                        <a class="sf-file" asp-action="OpenFile" asp-route-id="@Model.Id" asp-route-slot="0" target="_blank" rel="noopener" title="@Model.SignedPdfPath">
-                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
-                            <span class="small">@System.IO.Path.GetFileName(Model.SignedPdfPath)</span>
-                        </a>
-                        <div class="small text-muted mt-1 text-break">@System.IO.Path.GetDirectoryName(Model.SignedPdfPath)</div>
+                        <partial name="_StudyFileLink" model="@(new StudyFileLink(Model.Id, 0, Model.SignedPdfPath))" />
                     }
                     else
                     {
@@ -151,13 +148,10 @@
                 {
                     <p class="text-muted small mb-0">No linked files.</p>
                 }
-                <div class="d-grid gap-2">
+                <div class="d-grid gap-3">
                     @foreach (var link in Model.Links)
                     {
-                        <a class="sf-file" asp-action="OpenFile" asp-route-id="@Model.Id" asp-route-slot="@link.Slot" target="_blank" rel="noopener" title="@link.Path">
-                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
-                            <span class="small">@System.IO.Path.GetFileName(link.Path)</span>
-                        </a>
+                        <partial name="_StudyFileLink" model="@(new StudyFileLink(Model.Id, link.Slot, link.Path))" />
                     }
                 </div>
             </div>

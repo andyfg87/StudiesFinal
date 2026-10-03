@@ -17,6 +17,12 @@ namespace StudiesFinal.Web.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
 
+            // En desarrollo (LocalDB): arrancarla con sqllocaldb para que no quede huérfana
+            // al detener la depuración. Con SQL Server normal no hace nada.
+            var started = LocalDbStarter.EnsureStarted(context.Database.GetConnectionString()!);
+            if (started != null)
+                logger.LogInformation("{Message}", started);
+
             // Crea la base si no existe y aplica las migraciones pendientes
             await context.Database.MigrateAsync();
 

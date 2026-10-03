@@ -143,6 +143,12 @@ namespace StudiesFinal.Web.Models.ViewModels
 
         public SelectList? Templates { get; set; }
 
+        /// <summary>
+        /// Archivos ya guardados del estudio, para abrirlos desde el formulario.
+        /// Se rellena en Import (valores guardados), no con lo que se escribe en el formulario.
+        /// </summary>
+        public List<StudyFileLink> SavedFiles { get; set; } = new();
+
         public Study Export()
         {
             var entity = new Study { Status = StudyStatus.InProgress };
@@ -163,6 +169,11 @@ namespace StudiesFinal.Web.Models.ViewModels
             LinkFile2 = entity.LinkFile2;
             LinkFile3 = entity.LinkFile3;
             Status = entity.Status;
+
+            SavedFiles = new[] { (1, entity.LinkFile1), (2, entity.LinkFile2), (3, entity.LinkFile3) }
+                .Where(f => !string.IsNullOrWhiteSpace(f.Item2))
+                .Select(f => new StudyFileLink(entity.Id, f.Item1, f.Item2!))
+                .ToList();
         }
 
         /// <summary>No toca el estado ni la firma: eso solo lo cambia el flujo de trabajo.</summary>
@@ -178,6 +189,10 @@ namespace StudiesFinal.Web.Models.ViewModels
             entity.LinkFile3 = string.IsNullOrWhiteSpace(LinkFile3) ? null : LinkFile3.Trim();
         }
     }
+
+    /// <summary>Un archivo del estudio con sus acciones (Views/Studies/_StudyFileLink.cshtml).</summary>
+    /// <param name="Slot">1-3 = LinkFile1-3; 0 = PDF del informe firmado.</param>
+    public record StudyFileLink(int StudyId, int Slot, string Path);
 
     /// <summary>Totales por fase para el inicio y las pestañas del listado.</summary>
     public class StudyCounts

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using StudiesFinal.Models.EF;
+using StudiesFinal.Models.Files;
 using StudiesFinal.Models.Entities;
 using StudiesFinal.Models.Interface;
 using StudiesFinal.Web.Interface;

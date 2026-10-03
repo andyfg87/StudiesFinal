@@ -71,6 +71,22 @@
         </div>
 
         <div class="col-12 col-xl-4">
+            @if (Model.SavedFiles.Any())
+            {
+                @* PDF del equipo para consultarlo mientras se llena el informe *@
+                <div class="card shadow-sm mb-3 sf-study-files">
+                    <div class="card-body">
+                        <h3 class="h6 mb-2"><i class="bi bi-file-earmark-medical me-1" aria-hidden="true"></i>Study files</h3>
+                        <div class="d-grid gap-3">
+                            @foreach (var file in Model.SavedFiles)
+                            {
+                                <partial name="_StudyFileLink" model="file" />
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
                     <h3 class="h6 mb-1">Files</h3>
