@@ -123,12 +123,11 @@ dotnet run --project StudiesFinal.Importer -- --source "C:\ruta\StudiesFinal1_be
 - Conserva los Id de Access (con `IDENTITY_INSERT`; los estudios nuevos siguen numerándose a partir
   del último importado). `Estado`/`isComplete` → fase; `Signature` → fecha de firma.
 - Los estudios cuyo paciente no existe en Access reciben un paciente "(Patient N not found in Access)".
-- Links: las rutas antiguas se llevan a la carpeta del tipo de reporte, sustituyendo la carpeta de
-  primer nivel y conservando las subcarpetas:
-  `Z:\Studies\Stress Test Treadmill\X.pdf` → `\\192.168.199.140\Fileserver\Studies\Studies Report\<tipo>\X.pdf`.
-  La regla está en `StudiesFinal.Models/Files/StudyFilePaths.cs` (la misma que usa la web).
-- `--relink` (sin `--source`): no importa nada, solo recoloca así los links de los estudios que ya
-  están en la base. Se puede repetir sin problema.
+- Links (`LinkFile1-3`): se importan **tal cual están en Access** (`Z:\Studies\...`,
+  `\\192.168.199.170\Studies\...`, etc.) y se corrigen después con un query en SQL Server. Solo se
+  quitan espacios y el formato de hipervínculo de Access (`texto#ruta#`). Al abrir un archivo, la web
+  sí traduce los prefijos antiguos de `StudyFiles:LegacyPrefixes` al servidor actual, y al editar un
+  estudio los links que no se modifican se guardan sin cambios.
 
 ## Migraciones
 

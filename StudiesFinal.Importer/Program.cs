@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using StudiesFinal.Models.EF;
 using StudiesFinal.Models.Entities;
-using StudiesFinal.Models.Files;
 using System.Data.OleDb;
 using System.Globalization;
 
@@ -11,7 +10,6 @@ using System.Globalization;
 // de la web (LocalDB en desarrollo, SERVER01\SQLEXPRESS en el servidor).
 //
 //   dotnet run --project StudiesFinal.Importer -- --source "ruta\StudiesFinal1_be.accdb" [--replace]
-//   dotnet run --project StudiesFinal.Importer -- --relink
 //
 // Usa la MISMA configuración que la web (StudiesFinal.Web\appsettings.json +
 // appsettings.{entorno}.json). El entorno por defecto es Production, igual que la
@@ -22,27 +20,20 @@ using System.Globalization;
 //   --connection "..."          importa a otra base de SQL Server
 //   --settings "ruta\appsettings.json"   otra carpeta de configuración
 //   --replace   borra antes estudios, pacientes y plantillas
-//   --relink    no importa: solo recoloca los links de los estudios que ya hay en la base
 //
 // - Conserva los Id de Access (PatientID, ID de estudio y de plantilla).
 // - Estado/isComplete -> Status; Signature (fecha) -> SignedAt.
-// - Links: reescribe las rutas antiguas (Z:\Studies, \\192.168.199.170\Studies…) y los
-//   lleva a la carpeta del tipo de reporte:
-//     Z:\Studies\Stress Test Treadmill\X.pdf
-//       -> \\192.168.199.140\Fileserver\Studies\Studies Report\<tipo de reporte>\X.pdf
-//   (misma regla que la web: StudiesFinal.Models.Files.StudyFilePaths)
+// - Links (LinkFile1-3): se guardan TAL CUAL están en Access (Z:\Studies\..., \\192.168.199.170\...),
+//   sin reescribir el servidor ni la carpeta. Se corrigen después con un query en SQL Server.
+//   Solo se quitan espacios y el formato de hipervínculo de Access ("texto#ruta#" -> ruta).
 // - No toca usuarios ni registros de actividad.
 // =========================================================================
 
 var options = ParseArgs(args);
-var relinkOnly = options.ContainsKey("relink");
-options.TryGetValue("source", out var source);
-
-if (!relinkOnly && (source == null || !File.Exists(source)))
+if (!options.TryGetValue("source", out var source) || !File.Exists(source))
 {
     Console.Error.WriteLine("Usage: --source <StudiesFinal1_be.accdb> [--replace] [--environment Production|Development] " +
                             "[--connection \"...\"] [--settings <appsettings.json>]");
-    Console.Error.WriteLine("       --relink [--environment ...] [--connection \"...\"]   (only moves existing links to Studies Report)");
     return 1;
 }
 
@@ -68,25 +59,10 @@ if (string.IsNullOrWhiteSpace(connectionString))
     return 1;
 }
 
-// Rutas de archivos: misma sección StudyFiles y mismas reglas que la web
-var fileOptions = new StudyFilesOptions();
-config.GetSection(StudyFilesOptions.Section).Bind(fileOptions);
-StudyFilePaths paths;
-try
-{
-    paths = new StudyFilePaths(fileOptions);
-}
-catch (InvalidOperationException ex)
-{
-    Console.Error.WriteLine($"{ex.Message} ({settingsPath})");
-    return 1;
-}
-
-if (!relinkOnly)
-    Console.WriteLine($"Source     : {source}");
+Console.WriteLine($"Source     : {source}");
 Console.WriteLine($"Environment: {environment}");
 Console.WriteLine($"Target     : SQL Server · {DescribeConnection(connectionString)}");
-Console.WriteLine($"Links      : {string.Join(", ", paths.LegacyPrefixes)} -> {paths.ReportsRoot}\\<report type>");
+Console.WriteLine("Links      : kept as they are in Access");
 
 var dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
     .UseSqlServer(connectionString, sql => sql.CommandTimeout(120))
@@ -107,37 +83,6 @@ catch (InvalidOperationException ex)
 
 // Crea la base de datos si no existe y aplica las migraciones
 await db.Database.MigrateAsync();
-
-// Link de un estudio: ruta limpia, en la carpeta de su tipo de reporte y con 400 caracteres como máximo
-string? Link(string? raw, string? studyName)
-{
-    var relocated = paths.Relocate(raw, studyName);
-    return relocated is { Length: > 400 } ? relocated[..400] : relocated;
-}
-
-// =========================================================================
-//  --relink: recoloca los links de los estudios que ya están en la base
-// =========================================================================
-if (relinkOnly)
-{
-    int changed = 0, links = 0;
-    var all = await db.Studies.ToListAsync();
-    foreach (var s in all)
-    {
-        var before = (s.LinkFile1, s.LinkFile2, s.LinkFile3);
-        s.LinkFile1 = Link(s.LinkFile1, s.StudyName);
-        s.LinkFile2 = Link(s.LinkFile2, s.StudyName);
-        s.LinkFile3 = Link(s.LinkFile3, s.StudyName);
-
-        var n = (before.LinkFile1 != s.LinkFile1 ? 1 : 0) + (before.LinkFile2 != s.LinkFile2 ? 1 : 0) + (before.LinkFile3 != s.LinkFile3 ? 1 : 0);
-        if (n > 0) { changed++; links += n; }
-    }
-    await db.SaveChangesAsync();
-
-    Console.WriteLine($"Studies updated: {changed} ({links} links moved to {paths.ReportsRoot})");
-    Console.WriteLine("Relink finished.");
-    return 0;
-}
 
 // La conexión queda abierta toda la importación para que SET IDENTITY_INSERT
 // (que es de sesión) se aplique a los INSERT de EF.
@@ -218,7 +163,7 @@ db.ChangeTracker.Clear();
 Console.WriteLine($"Patients: {patientIds.Count}");
 
 // ---- Estudios ------------------------------------------------------------------
-int studies = 0, orphans = 0, noDate = 0, relocated = 0;
+int studies = 0, orphans = 0, noDate = 0, links = 0;
 var statusCount = new Dictionary<StudyStatus, int>();
 
 await WithExplicitIds<Study>(async () =>
@@ -248,8 +193,8 @@ await WithExplicitIds<Study>(async () =>
 
         string? StudyLink(object value)
         {
-            var link = Link(Str(value), studyName);
-            if (link != null && link.StartsWith(paths.ReportsRoot + "\\", StringComparison.OrdinalIgnoreCase)) relocated++;
+            var link = AccessLink(value);
+            if (link != null) links++;
             return link;
         }
 
@@ -280,7 +225,7 @@ Console.WriteLine($"Studies: {studies}  (In progress {statusCount.GetValueOrDefa
                   $"To sign {statusCount.GetValueOrDefault(StudyStatus.ToSign)}, Completed {statusCount.GetValueOrDefault(StudyStatus.Completed)})");
 Console.WriteLine($"Patients created for orphan studies: {orphans}");
 Console.WriteLine($"Studies without date (set to 01/01/1900): {noDate}");
-Console.WriteLine($"Links placed in {paths.ReportsRoot}: {relocated}");
+Console.WriteLine($"Links imported as in Access: {links}");
 Console.WriteLine("Import finished.");
 return 0;
 
@@ -327,6 +272,23 @@ static string? Str(object value, int? max = null)
     var s = value.ToString()!.Trim();
     if (s.Length == 0) return null;
     return max.HasValue && s.Length > max.Value ? s[..max.Value] : s;
+}
+
+// Link de Access tal cual. Solo se quitan espacios/comillas y, si viene en formato de
+// hipervínculo de Access ("texto#ruta#"), se toma la ruta. Máximo 400 caracteres (tamaño de la columna).
+static string? AccessLink(object value)
+{
+    var s = Str(value)?.Trim('"');
+    if (string.IsNullOrWhiteSpace(s)) return null;
+
+    if (s.Contains('#'))
+    {
+        var parts = s.Split('#');
+        if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]))
+            s = parts[1].Trim();
+    }
+
+    return s.Length > 400 ? s[..400] : s;
 }
 
 static Dictionary<string, string> ParseArgs(string[] args)

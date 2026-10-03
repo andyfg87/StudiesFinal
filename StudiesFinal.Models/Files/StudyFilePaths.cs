@@ -82,30 +82,6 @@ namespace StudiesFinal.Models.Files
             return Path.Combine(ReportsRoot, folder);
         }
 
-        /// <summary>
-        /// Lleva un link existente a la carpeta de su tipo de reporte, sustituyendo la
-        /// carpeta de primer nivel bajo la raíz y conservando el resto:
-        ///   \Studies\Stress Test Treadmill\JOSE…pdf        -> \Studies\Studies Report\&lt;tipo&gt;\JOSE…pdf
-        ///   \Studies\Nuclear Images\ABREU, NOEMI\x.jpg     -> \Studies\Studies Report\&lt;tipo&gt;\ABREU, NOEMI\x.jpg
-        /// Las rutas que ya están en Studies Report o fuera de la raíz no se tocan.
-        /// </summary>
-        public string? Relocate(string? path, string? studyName)
-        {
-            var p = Normalize(path);
-            if (p == null || !IsAllowed(p)) return p;
-
-            if (p.StartsWith(ReportsRoot + "\\", StringComparison.OrdinalIgnoreCase))
-                return p;
-
-            var relative = p[(BasePath.Length + 1)..];
-            var segments = relative.Split('\\', StringSplitOptions.RemoveEmptyEntries);
-
-            // Archivo suelto en la raíz: va directo a la carpeta del tipo
-            var rest = segments.Length > 1 ? string.Join('\\', segments.Skip(1)) : relative;
-
-            return Path.Combine(FolderFor(studyName), rest);
-        }
-
         /// <summary>Iniciales del tipo de reporte: "Holter Report" -> "HR" (o StudyFiles:Prefixes).</summary>
         public string PrefixFor(string? studyName)
         {

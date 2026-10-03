@@ -264,7 +264,7 @@ namespace StudiesFinal.Web.Controllers
             if (patient == null)
                 ModelState.AddModelError(nameof(model.PatientId), "Select an existing patient");
 
-            NormalizeLinks(model);
+            NormalizeLinks(model, study);
 
             if (!ModelState.IsValid || !await SaveUploads(model, study, patient!))
             {
@@ -600,18 +600,29 @@ namespace StudiesFinal.Web.Controllers
                 .OrderBy(x => x)
                 .ToListAsync();
 
-        /// <summary>Reescribe prefijos antiguos y comprueba que las rutas estén en el servidor de estudios.</summary>
-        private void NormalizeLinks(StudyInputVM model)
+        /// <summary>
+        /// Links nuevos o modificados: reescribe prefijos antiguos y comprueba que estén en el
+        /// servidor de estudios. Los que no se han tocado (p. ej. las rutas importadas tal cual de
+        /// Access) se guardan sin cambios, para no bloquear la edición del estudio.
+        /// </summary>
+        /// <param name="existing">Estudio guardado (en edición); null al crear.</param>
+        private void NormalizeLinks(StudyInputVM model, Study? existing = null)
         {
-            model.LinkFile1 = _files.Normalize(model.LinkFile1);
-            model.LinkFile2 = _files.Normalize(model.LinkFile2);
-            model.LinkFile3 = _files.Normalize(model.LinkFile3);
-
-            foreach (var (name, value) in new[] { (nameof(model.LinkFile1), model.LinkFile1), (nameof(model.LinkFile2), model.LinkFile2), (nameof(model.LinkFile3), model.LinkFile3) })
+            string? Check(string name, string? value, string? stored)
             {
-                if (value != null && !_files.IsAllowed(value))
+                var trimmed = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+                if (trimmed != null && string.Equals(trimmed, stored?.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return stored; // sin cambios
+
+                var normalized = _files.Normalize(trimmed);
+                if (normalized != null && !_files.IsAllowed(normalized))
                     ModelState.AddModelError(name, $"The path must start with {_files.BasePath}\\");
+                return normalized;
             }
+
+            model.LinkFile1 = Check(nameof(model.LinkFile1), model.LinkFile1, existing?.LinkFile1);
+            model.LinkFile2 = Check(nameof(model.LinkFile2), model.LinkFile2, existing?.LinkFile2);
+            model.LinkFile3 = Check(nameof(model.LinkFile3), model.LinkFile3, existing?.LinkFile3);
         }
 
         /// <summary>Guarda los archivos subidos en el servidor y rellena LinkFileN. false si falla.</summary>
