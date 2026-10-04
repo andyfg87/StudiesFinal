@@ -104,7 +104,10 @@ async Task WithExplicitIds<TEntity>(Func<Task> work) where TEntity : class
     }
 }
 
-if (await db.Studies.AnyAsync() || await db.Patients.AnyAsync() || await db.StudyTemplates.AnyAsync())
+// IgnoreQueryFilters: también cuentan (y se borran con --replace) las filas eliminadas lógicamente,
+// porque conservan sus Id y chocarían con los de Access
+if (await db.Studies.IgnoreQueryFilters().AnyAsync() || await db.Patients.IgnoreQueryFilters().AnyAsync()
+    || await db.StudyTemplates.IgnoreQueryFilters().AnyAsync())
 {
     if (!replace)
     {
@@ -113,9 +116,9 @@ if (await db.Studies.AnyAsync() || await db.Patients.AnyAsync() || await db.Stud
     }
 
     Console.WriteLine("Deleting existing studies, patients and templates…");
-    await db.Studies.ExecuteDeleteAsync();
-    await db.Patients.ExecuteDeleteAsync();
-    await db.StudyTemplates.ExecuteDeleteAsync();
+    await db.Studies.IgnoreQueryFilters().ExecuteDeleteAsync();
+    await db.Patients.IgnoreQueryFilters().ExecuteDeleteAsync();
+    await db.StudyTemplates.IgnoreQueryFilters().ExecuteDeleteAsync();
 }
 
 using var access = OpenAccess(source!);

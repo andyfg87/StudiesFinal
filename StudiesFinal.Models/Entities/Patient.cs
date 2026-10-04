@@ -8,7 +8,7 @@ namespace StudiesFinal.Models.Entities
     /// Patienttbl en Access. El PatientID no era autonumérico en Access, así que
     /// se conserva el mismo número y se asigna al crear (se propone el siguiente libre).
     /// </summary>
-    public class Patient : IEntity<int>
+    public class Patient : IEntity<int>, ISoftDelete
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -20,5 +20,12 @@ namespace StudiesFinal.Models.Entities
         public DateTime? DateOfBirth { get; set; }
 
         public ICollection<Study> Studies { get; set; } = new List<Study>();
+
+        // ---- Borrado lógico (ISoftDelete) ----------------------------------------
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        [StringLength(200)]
+        public string? DeletedByName { get; set; }
     }
 }

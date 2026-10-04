@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StudiesFinal.Models.Entities
 {
-    public class User : IEntity<Guid>
+    public class User : IEntity<Guid>, ISoftDelete
     {
         public User()
         {
@@ -32,6 +32,13 @@ namespace StudiesFinal.Models.Entities
         public UserRole Role { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        // ---- Borrado lógico (ISoftDelete) ----------------------------------------
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        [StringLength(200)]
+        public string? DeletedByName { get; set; }
 
         public string FullName => $"{FirstName} {LastName}".Trim();
     }

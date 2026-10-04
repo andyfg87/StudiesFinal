@@ -181,7 +181,7 @@
                             @foreach (var link in item.Links)
                             {
                                 <a asp-action="OpenFile" asp-route-id="@item.Id" asp-route-slot="@link.Slot" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-link px-1" title="@link.Path" aria-label="Open file @link.Slot">
+                                   class="btn btn-sm btn-link px-1" title="@System.IO.Path.GetFileName(link.Path)" aria-label="Open file @link.Slot">
                                     <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
                                 </a>
                             }

@@ -30,6 +30,21 @@ Fases de un estudio: **En progreso → Por firmar → Completado**.
 
 Las reglas están en `StudiesFinal.Web/Services/StudyWorkflow.cs`.
 
+### Borrado lógico (soft delete)
+
+Estudios, pacientes, plantillas y usuarios **no se borran de la base de datos**: al eliminarlos se
+marcan (`IsDeleted`, `DeletedAt`, `DeletedByName`) y desaparecen de todas las pantallas y búsquedas
+(filtros globales en `ApplicationDbContext`; un `Remove` se guarda como marca). Los archivos del
+servidor no se tocan.
+
+- **Deleted items** (menú de administración, `TrashController`, solo Admin) lista lo eliminado,
+  quién y cuándo, y permite restaurarlo. Al restaurar un estudio cuyo paciente también está
+  eliminado, se restaura el paciente. Un usuario no se puede restaurar si otro activo ya usa su
+  nombre de usuario.
+- El número de un paciente eliminado sigue ocupado (no se puede crear otro con el mismo número).
+- Para ver las filas eliminadas en SQL: `WHERE IsDeleted = 1`. El importador con `--replace`
+  también borra las filas eliminadas.
+
 ## Archivos de los estudios
 
 El servidor de archivos se configura en `appsettings.json`:
@@ -43,9 +58,28 @@ El servidor de archivos se configura en `appsettings.json`:
 ```
 
 - Raíz de los estudios: `\\192.168.199.140\Fileserver\Studies` (la unidad `Z:\Studies` de los
-  equipos). Todos los links deben estar debajo de esa ruta; las rutas antiguas (`Z:\Studies`,
-  `\\192.168.199.170\Studies`, …) se reescriben a ella (`StudyFiles:LegacyPrefixes`).
-- Los PDF firmados y los archivos subidos van a `ReportsFolder`, una carpeta por tipo de reporte:
+  equipos). Al abrir un archivo, las rutas antiguas (`Z:\Studies`, `\\192.168.199.170\Studies`, …)
+  se traducen a ella (`StudyFiles:LegacyPrefixes`).
+- **Archivos del estudio (LinkFile1-3): no se suben.** Al crear o editar un estudio se eligen con
+  el explorador de la propia web (*Browse…*, `FilesController`) y solo se guarda la ruta completa.
+- **Ubicaciones del explorador (`StudyFiles:BrowseRoots`).** El explorador empieza mostrando una
+  lista de ubicaciones con nombre y desde ahí se puede ir a cualquier carpeta que contengan:
+
+  ```json
+  "BrowseRoots": [
+    { "Name": "Fileserver", "Path": "\\\\192.168.199.140\\Fileserver" },
+    { "Name": "Scans",      "Path": "\\\\SERVER01\\Scans" }
+  ]
+  ```
+
+  Para permitir otra carpeta basta con añadir otra entrada (la cuenta de la web necesita lectura).
+  Si la raíz de los estudios no queda dentro de ninguna, se añade sola como "Studies". El navegador
+  solo ve rutas del tipo `Fileserver\Studies\Holter\archivo.pdf`; el servidor las traduce y no
+  permite salir de una ubicación (`..`, rutas absolutas o UNC escritas a mano se rechazan). El
+  formulario nunca acepta rutas escritas a mano (`LinkFileN` es `[BindNever]`).
+- **Por seguridad la web no muestra rutas** (ni en pantallas, ni en avisos, ni en errores): solo el
+  nombre del archivo. Los archivos se abren a través de la web (`/Studies/OpenFile`, `/Files/Open`).
+- Los PDF firmados van a `ReportsFolder`, una carpeta por tipo de reporte:
 
 ```
 \\192.168.199.140\Fileserver\Studies\Studies Report\Holter Report\HR-Angulo Juan-09-30-2026.pdf
@@ -55,8 +89,8 @@ El servidor de archivos se configura en `appsettings.json`:
   que el tipo de estudio, se indica en `StudyFiles:Folders` (p. ej. "Exercise Stress Test Protocol
   Report" → "Excercise Stress Test Protocol Report"). Las iniciales del archivo se pueden cambiar
   en `StudyFiles:Prefixes`.
-- La web sirve los archivos desde el servidor en `/Studies/OpenFile`, así que **la cuenta con la que
-  corre la web necesita lectura y escritura en esa carpeta compartida**.
+- La web lee y sirve los archivos desde el servidor, así que **la cuenta con la que corre la web
+  necesita lectura en esa carpeta compartida (y escritura en `ReportsFolder` para los PDF firmados)**.
 
 **PDF del informe al firmar:** cuando el doctor firma, se genera el PDF del informe
 (mismo formato que la plantilla de Access: logo, cabecera del médico, firma electrónica y

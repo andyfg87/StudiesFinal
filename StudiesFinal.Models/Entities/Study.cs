@@ -11,7 +11,7 @@ namespace StudiesFinal.Models.Entities
     ///   Estado = Signed                     -> Completed
     /// Signature (fecha como texto) pasa a SignedAt + quién firmó.
     /// </summary>
-    public class Study : IEntity<int>
+    public class Study : IEntity<int>, ISoftDelete
     {
         [Key]
         public int Id { get; set; }
@@ -64,6 +64,13 @@ namespace StudiesFinal.Models.Entities
         public string? UpdatedByName { get; set; }
 
         public bool IsLocked => Status == StudyStatus.Completed;
+
+        // ---- Borrado lógico (ISoftDelete) ----------------------------------------
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        [StringLength(200)]
+        public string? DeletedByName { get; set; }
     }
 
     public enum StudyStatus

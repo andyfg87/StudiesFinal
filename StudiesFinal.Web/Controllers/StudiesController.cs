@@ -181,15 +181,13 @@ namespace StudiesFinal.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequestSizeLimit(600L * 1024 * 1024)]
-        [RequestFormLimits(MultipartBodyLengthLimit = 600L * 1024 * 1024)]
         public override async Task<IActionResult> Create(StudyInputVM model)
         {
             var patient = model.PatientId.HasValue ? await _patientRepository.GetByIdAsync(model.PatientId.Value) : null;
             if (patient == null)
                 ModelState.AddModelError(nameof(model.PatientId), "Select an existing patient");
 
-            NormalizeLinks(model);
+            ApplyFileSelections(model, existing: null);
 
             if (!ModelState.IsValid)
                 return await CreateView(model, patient);
@@ -198,9 +196,6 @@ namespace StudiesFinal.Web.Controllers
             study.Information = _sanitizer.Sanitize(model.Information);
             study.CreatedAt = DateTime.Now;
             study.CreatedByName = User.FullName();
-
-            if (!await SaveUploads(model, study, patient!))
-                return await CreateView(model, patient);
 
             try
             {
@@ -246,8 +241,6 @@ namespace StudiesFinal.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequestSizeLimit(600L * 1024 * 1024)]
-        [RequestFormLimits(MultipartBodyLengthLimit = 600L * 1024 * 1024)]
         public override async Task<IActionResult> Edit(StudyInputVM model)
         {
             var study = await _repository.GetByIdAsync(model.Id);
@@ -264,9 +257,9 @@ namespace StudiesFinal.Web.Controllers
             if (patient == null)
                 ModelState.AddModelError(nameof(model.PatientId), "Select an existing patient");
 
-            NormalizeLinks(model, study);
+            ApplyFileSelections(model, study);
 
-            if (!ModelState.IsValid || !await SaveUploads(model, study, patient!))
+            if (!ModelState.IsValid)
             {
                 model.Status = study.Status;
                 // Los archivos ya guardados siguen visibles para consultarlos al corregir
@@ -333,7 +326,7 @@ namespace StudiesFinal.Web.Controllers
             // PDF del informe firmado en \\{Server}\{Share}\<tipo>\. Si falla, la firma se mantiene.
             var pdfError = await SaveSignedPdf(study);
             TempData["Success"] = pdfError == null
-                ? $"Study signed. PDF saved to {study.SignedPdfPath}"
+                ? "Study signed. The signed PDF was saved on the studies server."
                 : "Study signed.";
             if (pdfError != null)
                 TempData["Error"] = pdfError;
@@ -376,7 +369,7 @@ namespace StudiesFinal.Web.Controllers
 
             var error = await SaveSignedPdf(study);
             if (error == null)
-                TempData["Success"] = $"PDF saved to {study.SignedPdfPath}";
+                TempData["Success"] = "The signed PDF was saved on the studies server.";
             else
                 TempData["Error"] = error;
 
@@ -470,7 +463,7 @@ namespace StudiesFinal.Web.Controllers
         /// download = false: se abre en el visor del navegador (ventana o pestaña nueva).
         /// download = true: se descarga y se abre con el lector de PDF instalado.
         /// Siempre se abre en otra ventana, así que los errores se muestran en una
-        /// página propia y no en la del estudio.
+        /// página propia (sin la ruta) y no en la del estudio.
         /// </summary>
         public async Task<IActionResult> OpenFile(int id, int slot = 1, bool download = false)
         {
@@ -478,50 +471,16 @@ namespace StudiesFinal.Web.Controllers
             if (study == null)
                 return NotFound();
 
-            // slot 0 = PDF del informe firmado
+            // slot 0 = PDF del informe firmado. Los prefijos antiguos de Access (Z:\Studies…)
+            // se traducen al servidor actual; lo que quede fuera de la carpeta de estudios no se abre.
             var path = _files.Normalize(slot switch { 0 => study.SignedPdfPath, 2 => study.LinkFile2, 3 => study.LinkFile3, _ => study.LinkFile1 });
-
-            if (!_files.IsAllowed(path))
-                return FileError($"The file path is not inside {_files.BasePath}.", path);
-
-            try
+            if (path != null && !_files.IsAllowed(path))
             {
-                if (!System.IO.File.Exists(path))
-                    return FileError("File not found.", path);
-            }
-            catch (Exception ex)
-            {
-                await LogError(nameof(OpenFile), ex, new { id, slot });
-                return FileError("The server cannot access the studies folder.", path);
+                await _logger.LogWarning($"Study {id}: file outside the studies folder", nameof(StudiesController), nameof(OpenFile), new { id, slot, path });
+                return StudyFileResults.FileError(this, "This file cannot be opened from the application.", Path.GetFileName(path));
             }
 
-            if (!new FileExtensionContentTypeProvider().TryGetContentType(path!, out var contentType))
-                contentType = "application/octet-stream";
-
-            var fileName = Path.GetFileName(path!);
-            if (download)
-                return PhysicalFile(path!, contentType, fileName); // attachment
-
-            // inline: los PDF se abren en el visor del navegador
-            Response.Headers.ContentDisposition = $"inline; filename=\"{fileName}\"";
-            return PhysicalFile(path!, contentType);
-        }
-
-        private ViewResult FileError(string message, string? path)
-        {
-            Response.StatusCode = StatusCodes.Status404NotFound;
-            ViewBag.Message = message;
-            ViewBag.Path = path;
-            return View("FileError");
-        }
-
-        /// <summary>Ruta donde se guardaría un archivo subido ahora (para mostrarla en el formulario).</summary>
-        [HttpGet]
-        public async Task<IActionResult> UploadTarget(string? studyName, int? patientId)
-        {
-            var patient = patientId.HasValue ? await _patientRepository.GetByIdAsync(patientId.Value) : null;
-            var path = Path.Combine(_files.FolderFor(studyName), _files.FileNameFor(studyName, patient?.Name, ".pdf"));
-            return Json(new { path });
+            return await this.ServeStudyFile(path, download, _logger);
         }
 
         // ======================= AUXILIARES =======================
@@ -546,7 +505,7 @@ namespace StudiesFinal.Web.Controllers
             catch (Exception ex)
             {
                 await LogError(nameof(SaveSignedPdf), ex, new { study.Id });
-                return $"The PDF could not be saved to {_files.FolderFor(study.StudyName)}: {ex.Message} " +
+                return "The signed PDF could not be saved on the studies server. " +
                        "You can retry with \"Generate PDF\" when the server is available.";
             }
         }
@@ -601,62 +560,34 @@ namespace StudiesFinal.Web.Controllers
                 .ToListAsync();
 
         /// <summary>
-        /// Links nuevos o modificados: reescribe prefijos antiguos y comprueba que estén en el
-        /// servidor de estudios. Los que no se han tocado (p. ej. las rutas importadas tal cual de
-        /// Access) se guardan sin cambios, para no bloquear la edición del estudio.
+        /// Aplica los archivos elegidos en el explorador (no se sube nada: solo se guarda la ruta).
+        /// Por cada hueco, FileSelectionN es:
+        ///   vacío -> se mantiene el archivo actual (p. ej. la ruta importada tal cual de Access)
+        ///   "-"   -> se quita el archivo
+        ///   ruta del explorador ("Ubicación\carpeta\archivo") -> nuevo archivo
+        /// Las rutas nunca vienen del formulario directamente: LinkFileN no se enlaza (BindNever).
         /// </summary>
         /// <param name="existing">Estudio guardado (en edición); null al crear.</param>
-        private void NormalizeLinks(StudyInputVM model, Study? existing = null)
+        private void ApplyFileSelections(StudyInputVM model, Study? existing)
         {
-            string? Check(string name, string? value, string? stored)
+            string? Apply(int slot, string? selection, string? current)
             {
-                var trimmed = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-                if (trimmed != null && string.Equals(trimmed, stored?.Trim(), StringComparison.OrdinalIgnoreCase))
-                    return stored; // sin cambios
+                if (string.IsNullOrWhiteSpace(selection)) return current;
+                if (selection == StudyInputVM.RemoveFile) return null;
 
-                var normalized = _files.Normalize(trimmed);
-                if (normalized != null && !_files.IsAllowed(normalized))
-                    ModelState.AddModelError(name, $"The path must start with {_files.BasePath}\\");
-                return normalized;
+                // "Ubicación\...\archivo": tiene que haber algo más que el nombre de la ubicación
+                var full = selection.Trim('\\', '/').Contains('\\') ? _files.Resolve(selection) : null;
+                if (full == null)
+                {
+                    ModelState.AddModelError($"FileSelection{slot}", "The selected file is not valid. Choose it again.");
+                    return current;
+                }
+                return full;
             }
 
-            model.LinkFile1 = Check(nameof(model.LinkFile1), model.LinkFile1, existing?.LinkFile1);
-            model.LinkFile2 = Check(nameof(model.LinkFile2), model.LinkFile2, existing?.LinkFile2);
-            model.LinkFile3 = Check(nameof(model.LinkFile3), model.LinkFile3, existing?.LinkFile3);
-        }
-
-        /// <summary>Guarda los archivos subidos en el servidor y rellena LinkFileN. false si falla.</summary>
-        private async Task<bool> SaveUploads(StudyInputVM model, Study study, Patient patient)
-        {
-            var uploads = new[] { (1, model.Upload1), (2, model.Upload2), (3, model.Upload3) };
-            if (!uploads.Any(u => u.Item2?.Length > 0))
-                return true;
-
-            // Para el nombre del archivo se usan la fecha y el nombre del estudio del formulario
-            var target = new Study { StudyDate = model.StudyDate, StudyName = model.StudyName };
-
-            foreach (var (slot, file) in uploads)
-            {
-                if (file == null || file.Length == 0) continue;
-                try
-                {
-                    var path = await _files.SaveAsync(file, target, patient, slot);
-                    switch (slot)
-                    {
-                        case 1: model.LinkFile1 = path; break;
-                        case 2: model.LinkFile2 = path; break;
-                        case 3: model.LinkFile3 = path; break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await LogError("Upload", ex, new { slot, file.FileName });
-                    ModelState.AddModelError($"Upload{slot}", $"The file could not be saved to {_files.FolderFor(model.StudyName)}: {ex.Message}");
-                    return false;
-                }
-            }
-
-            return true;
+            model.LinkFile1 = Apply(1, model.FileSelection1, existing?.LinkFile1);
+            model.LinkFile2 = Apply(2, model.FileSelection2, existing?.LinkFile2);
+            model.LinkFile3 = Apply(3, model.FileSelection3, existing?.LinkFile3);
         }
     }
 }

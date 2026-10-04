@@ -63,6 +63,18 @@ namespace StudiesFinal.Models.Files
         /// <summary>Carpeta para estudios sin tipo de reporte.</summary>
         public string DefaultFolder { get; set; } = "Other";
 
-        public long MaxUploadBytes { get; set; } = 200L * 1024 * 1024;
+        /// <summary>
+        /// Ubicaciones que se pueden recorrer con el explorador de archivos de la web y desde
+        /// las que se pueden abrir archivos (p. ej. todo \\192.168.199.140\Fileserver).
+        /// La raíz de estudios (Server/Share) se permite siempre aunque no esté en la lista.
+        /// </summary>
+        public List<BrowseRoot> BrowseRoots { get; set; } = new();
+    }
+
+    /// <summary>Ubicación del explorador: nombre visible + ruta (no se muestra al usuario).</summary>
+    public class BrowseRoot
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
     }
 }

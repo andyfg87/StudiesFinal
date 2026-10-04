@@ -48,30 +48,155 @@
         editors[wrap.dataset.richEditor] = quill;
     });
 
-    // ---- Ruta donde se guardará el archivo subido ----------------------------
-    // \\<servidor>\<carpeta compartida>\<tipo de reporte>\<iniciales>-<paciente>-<fecha de hoy>.pdf
-    // (la calcula el servidor con StudyFiles:Server / Share de appsettings.json)
-    var uploadBox = document.querySelector("[data-upload-target]");
-    var uploadTimer = null;
+    // ---- Explorador de archivos del servidor (FilesController) ---------------
+    // Primer nivel: las ubicaciones configuradas (StudyFiles:BrowseRoots). Cada hueco
+    // [data-file-slot] guarda en un campo oculto la ruta del explorador del archivo elegido
+    // ("Ubicación\carpeta\archivo"; "" = sin cambios, "-" = quitar). Solo se muestra el nombre.
+    var picker = document.getElementById("filePicker");
+    if (picker && window.bootstrap) {
+        var modal = bootstrap.Modal.getOrCreateInstance(picker);
+        var listEl = picker.querySelector("[data-picker-list]");
+        var crumbsEl = picker.querySelector("[data-picker-crumbs]");
+        var searchEl = picker.querySelector("[data-picker-search]");
+        var statusEl = picker.querySelector("[data-picker-status]");
+        var LAST_DIR = "studiesfinal-last-folder";
+        var currentSlot = null;
+        var currentDir = "";
+        var searchTimer = null;
 
-    function refreshUploadTarget() {
-        if (!uploadBox) return;
-        clearTimeout(uploadTimer);
-        uploadTimer = setTimeout(function () {
-            var name = document.getElementById("StudyName");
-            var patient = document.getElementById("PatientId");
-            var qs = "?studyName=" + encodeURIComponent(name ? name.value : "") +
-                     "&patientId=" + encodeURIComponent(patient ? patient.value : "");
-            fetch(uploadBox.dataset.url + qs, { credentials: "same-origin" })
-                .then(function (r) { return r.json(); })
-                .then(function (data) { uploadBox.querySelector("[data-upload-path]").textContent = data.path; })
-                .catch(function () { /* se deja la ruta anterior */ });
-        }, 250);
+        var lastDir = function () { try { return localStorage.getItem(LAST_DIR) || ""; } catch (e) { return ""; } };
+        var saveDir = function (d) { try { localStorage.setItem(LAST_DIR, d); } catch (e) { /* sin almacenamiento */ } };
+
+        var formatSize = function (bytes) {
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1048576) return Math.round(bytes / 1024) + " KB";
+            return (bytes / 1048576).toFixed(1) + " MB";
+        };
+
+        var iconFor = function (name) {
+            var ext = (name.split(".").pop() || "").toLowerCase();
+            if (ext === "pdf") return "bi-file-earmark-pdf text-danger";
+            if (["jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff"].indexOf(ext) >= 0) return "bi-file-earmark-image text-primary";
+            if (["doc", "docx"].indexOf(ext) >= 0) return "bi-file-earmark-word text-primary";
+            return "bi-file-earmark text-muted";
+        };
+
+        var row = function (icon, text, meta) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "sf-picker-item";
+            var i = document.createElement("i");
+            i.className = "bi " + icon;
+            i.setAttribute("aria-hidden", "true");
+            var n = document.createElement("span");
+            n.className = "name";
+            n.textContent = text;
+            b.append(i, n);
+            if (meta) {
+                var m = document.createElement("span");
+                m.className = "meta";
+                m.textContent = meta;
+                b.appendChild(m);
+            }
+            return b;
+        };
+
+        var load = function (dir) {
+            var q = searchEl.value.trim();
+            statusEl.textContent = "Loading…";
+            listEl.setAttribute("aria-busy", "true");
+
+            fetch(picker.dataset.browseUrl + "?dir=" + encodeURIComponent(dir) + "&q=" + encodeURIComponent(q), { credentials: "same-origin" })
+                .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, status: r.status, data: data }; }); })
+                .then(function (res) {
+                    listEl.removeAttribute("aria-busy");
+                    if (!res.ok) {
+                        // Carpeta recordada que ya no existe o no es válida: volver a las ubicaciones
+                        if (dir && res.status !== 503) { saveDir(""); load(""); return; }
+                        listEl.innerHTML = "";
+                        statusEl.textContent = res.data.error || "The folder could not be opened.";
+                        return;
+                    }
+
+                    var data = res.data;
+                    currentDir = data.dir;
+                    saveDir(currentDir);
+
+                    // Migas
+                    crumbsEl.innerHTML = "";
+                    data.crumbs.forEach(function (c, idx) {
+                        if (idx > 0) crumbsEl.appendChild(document.createTextNode(" / "));
+                        var a = document.createElement("button");
+                        a.type = "button";
+                        a.className = "btn btn-link btn-sm p-0 align-baseline";
+                        a.textContent = c.name;
+                        if (idx === data.crumbs.length - 1) a.classList.add("fw-semibold", "text-reset");
+                        a.addEventListener("click", function () { searchEl.value = ""; load(c.dir); });
+                        crumbsEl.appendChild(a);
+                    });
+
+                    // Carpetas y archivos
+                    listEl.innerHTML = "";
+                    data.folders.forEach(function (f) {
+                        var b = row("bi-folder-fill text-warning", f.name);
+                        b.addEventListener("click", function () { searchEl.value = ""; load(f.dir); });
+                        listEl.appendChild(b);
+                    });
+                    data.files.forEach(function (f) {
+                        var b = row(iconFor(f.name), f.name, f.modified + " · " + formatSize(f.size));
+                        b.addEventListener("click", function () { choose(f); });
+                        listEl.appendChild(b);
+                    });
+
+                    if (!data.folders.length && !data.files.length) {
+                        statusEl.textContent = q ? "Nothing matches the search in this folder." : "This folder is empty.";
+                    } else {
+                        statusEl.textContent = data.folders.length + " folder(s), " + data.total + " file(s)" +
+                            (data.truncated ? " — showing the " + data.files.length + " most recent; use the search to find older files." : "");
+                    }
+                })
+                .catch(function () {
+                    listEl.removeAttribute("aria-busy");
+                    statusEl.textContent = "The studies server is not available.";
+                });
+        };
+
+        var choose = function (file) {
+            if (!currentSlot) return;
+            currentSlot.querySelector("[data-slot-selection]").value = file.path;
+            setSlot(currentSlot, file.name, picker.dataset.openUrl + "?p=" + encodeURIComponent(file.path));
+            modal.hide();
+        };
+
+        var setSlot = function (slot, name, openUrl) {
+            var nameEl = slot.querySelector("[data-slot-name]");
+            nameEl.textContent = name || "No file";
+            slot.querySelector(".sf-slot-file").classList.toggle("is-empty", !name);
+
+            var open = slot.querySelector("[data-slot-open]");
+            open.classList.toggle("d-none", !openUrl);
+            open.href = openUrl || "#";
+            slot.querySelector("[data-slot-remove]").classList.toggle("d-none", !name);
+        };
+
+        document.querySelectorAll("[data-file-slot]").forEach(function (slot) {
+            slot.querySelector("[data-slot-browse]").addEventListener("click", function () {
+                currentSlot = slot;
+                searchEl.value = "";
+                modal.show();
+                load(lastDir());
+            });
+            slot.querySelector("[data-slot-remove]").addEventListener("click", function () {
+                slot.querySelector("[data-slot-selection]").value = "-";
+                setSlot(slot, null, null);
+            });
+        });
+
+        searchEl.addEventListener("input", function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () { load(currentDir); }, 300);
+        });
     }
-
-    var studyNameInput = document.getElementById("StudyName");
-    if (studyNameInput) studyNameInput.addEventListener("input", refreshUploadTarget);
-    refreshUploadTarget();
 
     // ---- Plantillas: rellena nombre del estudio e informe ------------------
     var templateSelect = document.querySelector("[data-template-select]");
@@ -91,7 +216,6 @@
                 .then(function (data) {
                     var name = document.getElementById("StudyName");
                     if (name && data.studyName) name.value = data.studyName;
-                    refreshUploadTarget();
                     if (editor) {
                         editor.setContents([]);
                         editor.clipboard.dangerouslyPasteHTML(data.info || "");
@@ -115,7 +239,6 @@
             hidden.value = p.id;
             search.value = p.id + " · " + (p.name || "");
             close();
-            refreshUploadTarget();
         };
 
         search.addEventListener("input", function () {

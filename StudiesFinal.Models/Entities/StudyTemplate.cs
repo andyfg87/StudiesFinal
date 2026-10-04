@@ -7,7 +7,7 @@ namespace StudiesFinal.Models.Entities
     /// StudyTemplate en Access. StudyInfo es texto enriquecido (HTML).
     /// GenericName es el nombre con el que se guarda el estudio (StudyName).
     /// </summary>
-    public class StudyTemplate : IEntity<int>
+    public class StudyTemplate : IEntity<int>, ISoftDelete
     {
         [Key]
         public int Id { get; set; }
@@ -20,5 +20,12 @@ namespace StudiesFinal.Models.Entities
 
         [StringLength(50)]
         public string? GenericName { get; set; }
+
+        // ---- Borrado lógico (ISoftDelete) ----------------------------------------
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        [StringLength(200)]
+        public string? DeletedByName { get; set; }
     }
 }

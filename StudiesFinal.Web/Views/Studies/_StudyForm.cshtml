@@ -1,13 +1,11 @@
 @model StudyInputVM
-@inject StudiesFinal.Web.Services.IStudyFileService Files
 
 @{
     var isEdit = Model.Id > 0;
     var canSendToSign = !isEdit || ViewBag.CanSendToSign == true;
-    var basePath = Files.BasePath;
 }
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" method="post" enctype="multipart/form-data">
+<form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
     @if (isEdit)
     {
         <input type="hidden" asp-for="Id" />
@@ -87,28 +85,46 @@
                 </div>
             }
 
+            @*
+                Archivos del estudio: se eligen con el explorador del servidor y solo se guarda la
+                ruta (no se sube nada). Por seguridad solo se muestra el nombre del archivo.
+            *@
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
                     <h3 class="h6 mb-1">Files</h3>
-                    <p class="small text-muted mb-2">Upload the file and it is saved in the report type folder, or type a path that starts with <code>@basePath\</code>.</p>
-                    <div class="small mb-3" data-upload-target data-url="@Url.Action("UploadTarget", "Studies")">
-                        <span class="text-muted">It will be saved as:</span>
-                        <code class="d-block text-break" data-upload-path>@basePath\…</code>
-                    </div>
+                    <p class="small text-muted mb-3">Choose the study files from the studies server. They are not copied: the study only keeps a link to them.</p>
 
                     @for (var slot = 1; slot <= 3; slot++)
                     {
-                        var linkName = $"LinkFile{slot}";
-                        var uploadName = $"Upload{slot}";
-                        var value = slot switch { 1 => Model.LinkFile1, 2 => Model.LinkFile2, _ => Model.LinkFile3 };
+                        var selectionName = $"FileSelection{slot}";
+                        var fileName = Model.FileName(slot);
+                        // Archivo nuevo (aún sin guardar): se abre por su ruta relativa; guardado: por el estudio
+                        var openUrl = fileName == null ? null
+                            : Model.HasNewSelection(slot) ? Url.Action("Open", "Files", new { p = Model.FileSelection(slot) })
+                            : isEdit ? Url.Action("OpenFile", "Studies", new { id = Model.Id, slot }) : null;
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold" for="@linkName">File @slot</label>
-                            <input class="form-control form-control-sm mb-1" id="@linkName" name="@linkName" value="@value"
-                                   placeholder="@Files.FolderFor("Holter Report")\HR-Patient-date.pdf" />
-                            <input class="form-control form-control-sm" type="file" id="@uploadName" name="@uploadName" aria-label="Upload file @slot" />
-                            <span class="text-danger small">@Html.ValidationMessage(linkName)</span>
-                            <span class="text-danger small">@Html.ValidationMessage(uploadName)</span>
+                        <div class="sf-slot mb-3" data-file-slot="@slot">
+                            <label class="form-label small fw-semibold mb-1">File @slot</label>
+                            <input type="hidden" name="@selectionName" value="@Model.FileSelection(slot)" data-slot-selection />
+
+                            <div class="sf-slot-file @(fileName == null ? "is-empty" : "")">
+                                <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                                <span class="small text-break" data-slot-name>@(fileName ?? "No file")</span>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-slot-browse>
+                                    <i class="bi bi-folder2-open me-1" aria-hidden="true"></i>Browse…
+                                </button>
+                                <a class="btn btn-sm btn-outline-secondary @(openUrl == null ? "d-none" : "")" href="@(openUrl ?? "#")"
+                                   target="_blank" rel="noopener" data-open-beside data-slot-open title="Open beside the form">
+                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Open
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger @(fileName == null ? "d-none" : "")" data-slot-remove title="Remove this file from the study">
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i><span class="visually-hidden">Remove</span>
+                                </button>
+                            </div>
+                            <span class="text-danger small">@Html.ValidationMessage(selectionName)</span>
                         </div>
                     }
                 </div>
@@ -152,3 +168,30 @@
         }
     </div>
 </form>
+
+@* Explorador de la carpeta de estudios del servidor (FilesController.Browse). Solo muestra nombres. *@
+<div class="modal fade" id="filePicker" tabindex="-1" aria-labelledby="filePickerTitle" aria-hidden="true"
+     data-browse-url="@Url.Action("Browse", "Files")" data-open-url="@Url.Action("Open", "Files")">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filePickerTitle"><i class="bi bi-folder2-open me-2" aria-hidden="true"></i>Choose a file</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="sf-picker-bar">
+                    <nav aria-label="Folders" class="sf-picker-crumbs" data-picker-crumbs></nav>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <input type="search" class="form-control" placeholder="Search in this folder…" data-picker-search aria-label="Search in this folder" />
+                    </div>
+                </div>
+                <div class="sf-picker-list" data-picker-list role="listbox" aria-label="Folders and files"></div>
+                <div class="small text-muted px-3 py-2 border-top" data-picker-status></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

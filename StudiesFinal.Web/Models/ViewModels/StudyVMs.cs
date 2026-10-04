@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using StudiesFinal.Models.Entities;
 using StudiesFinal.Models.Interface;
@@ -121,22 +122,45 @@ namespace StudiesFinal.Web.Models.ViewModels
         [Display(Name = "Processed")]
         public bool Processed { get; set; }
 
-        [StringLength(400)]
-        [Display(Name = "File 1")]
+        // Rutas de los archivos del estudio. NUNCA se toman del formulario (BindNever): las rellena
+        // el controlador con lo guardado + lo elegido en el explorador (FileSelectionN).
+        [BindNever]
         public string? LinkFile1 { get; set; }
 
-        [StringLength(400)]
-        [Display(Name = "File 2")]
+        [BindNever]
         public string? LinkFile2 { get; set; }
 
-        [StringLength(400)]
-        [Display(Name = "File 3")]
+        [BindNever]
         public string? LinkFile3 { get; set; }
 
-        // Archivos subidos desde el navegador (se guardan en el servidor de estudios)
-        public IFormFile? Upload1 { get; set; }
-        public IFormFile? Upload2 { get; set; }
-        public IFormFile? Upload3 { get; set; }
+        /// <summary>Valor de FileSelectionN para quitar el archivo de ese hueco.</summary>
+        public const string RemoveFile = "-";
+
+        // Lo elegido en el explorador de archivos, por hueco:
+        // vacío = sin cambios, "-" = quitar, ruta RELATIVA a la carpeta de estudios = archivo nuevo.
+        public string? FileSelection1 { get; set; }
+        public string? FileSelection2 { get; set; }
+        public string? FileSelection3 { get; set; }
+
+        public string? LinkFile(int slot) => slot switch { 1 => LinkFile1, 2 => LinkFile2, _ => LinkFile3 };
+
+        public string? FileSelection(int slot) => slot switch { 1 => FileSelection1, 2 => FileSelection2, _ => FileSelection3 };
+
+        /// <summary>true si en este hueco se eligió un archivo nuevo que todavía no está guardado.</summary>
+        public bool HasNewSelection(int slot)
+        {
+            var s = FileSelection(slot);
+            return !string.IsNullOrWhiteSpace(s) && s != RemoveFile;
+        }
+
+        /// <summary>Solo el nombre del archivo del hueco (la ruta no se muestra).</summary>
+        public string? FileName(int slot)
+        {
+            var path = LinkFile(slot);
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            var name = System.IO.Path.GetFileName(path.TrimEnd('\\', '/'));
+            return string.IsNullOrEmpty(name) ? path : name;
+        }
 
         /// <summary>Estado actual (solo lectura en el formulario).</summary>
         public StudyStatus Status { get; set; } = StudyStatus.InProgress;

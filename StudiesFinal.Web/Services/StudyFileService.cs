@@ -23,8 +23,17 @@ namespace StudiesFinal.Web.Services
         /// <summary>Nombre con el que se guarda: HR-Paciente-MM-dd-yyyy.ext (fecha de hoy).</summary>
         string FileNameFor(string? studyName, string? patientName, string extension);
 
-        /// <summary>Guarda un archivo subido en la carpeta del estudio y devuelve la ruta completa.</summary>
-        Task<string> SaveAsync(IFormFile file, Study study, Patient patient, int slot);
+        /// <summary>Ubicaciones del explorador de archivos (StudyFiles:BrowseRoots).</summary>
+        IReadOnlyList<StudyFilePaths.BrowseLocation> Locations { get; }
+
+        /// <summary>
+        /// Ruta del explorador ("Ubicación\carpeta\archivo") -> ruta completa.
+        /// null si no es válida o sale de las ubicaciones permitidas.
+        /// </summary>
+        string? Resolve(string? browserPath);
+
+        /// <summary>Ruta completa -> ruta del explorador (null si no está en ninguna ubicación).</summary>
+        string? ToBrowserPath(string? fullPath);
 
         /// <summary>Guarda contenido generado (p. ej. el PDF del informe firmado) y devuelve la ruta completa.</summary>
         Task<string> SaveBytesAsync(byte[] content, Study study, Patient? patient, string extension);
@@ -67,19 +76,11 @@ namespace StudiesFinal.Web.Services
             return $"{PrefixFor(studyName)}-{patient}-{DateTime.Today:MM-dd-yyyy}{extension}";
         }
 
-        public async Task<string> SaveAsync(IFormFile file, Study study, Patient patient, int slot)
-        {
-            if (file.Length > _options.MaxUploadBytes)
-                throw new InvalidOperationException($"The file exceeds the {_options.MaxUploadBytes / (1024 * 1024)} MB limit.");
+        public IReadOnlyList<StudyFilePaths.BrowseLocation> Locations => _paths.Locations;
 
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            var target = NewTargetPath(study.StudyName, patient.Name, ext);
+        public string? Resolve(string? browserPath) => _paths.Resolve(browserPath);
 
-            await using var stream = new FileStream(target, FileMode.CreateNew);
-            await file.CopyToAsync(stream);
-
-            return target;
-        }
+        public string? ToBrowserPath(string? fullPath) => _paths.ToBrowserPath(fullPath);
 
         public async Task<string> SaveBytesAsync(byte[] content, Study study, Patient? patient, string extension)
         {

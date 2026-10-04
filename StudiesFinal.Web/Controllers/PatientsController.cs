@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -95,8 +95,9 @@ namespace StudiesFinal.Web.Controllers
 
         public override async Task<IActionResult> Create()
         {
-            // Propuesta: siguiente número libre (se puede cambiar por el que dé el equipo)
-            var maxId = await (await _repository.GetAll()).MaxAsync(p => (int?)p.Id) ?? 0;
+            // Propuesta: siguiente número libre (se puede cambiar por el que dé el equipo).
+            // Cuenta también los eliminados: su número sigue ocupado y se pueden restaurar.
+            var maxId = await (await _repository.GetAllIncludingDeleted()).MaxAsync(p => (int?)p.Id) ?? 0;
             return View(new PatientInputVM { Id = maxId + 1 });
         }
 
@@ -104,8 +105,11 @@ namespace StudiesFinal.Web.Controllers
         [ValidateAntiForgeryToken]
         public override async Task<IActionResult> Create(PatientInputVM model)
         {
-            if (await _repository.GetByIdAsync(model.Id) != null)
-                ModelState.AddModelError(nameof(model.Id), "A patient with that number already exists");
+            var existing = await (await _repository.GetAllIncludingDeleted()).FirstOrDefaultAsync(p => p.Id == model.Id);
+            if (existing != null)
+                ModelState.AddModelError(nameof(model.Id), existing.IsDeleted
+                    ? "A deleted patient has that number. An admin can restore it from Deleted items."
+                    : "A patient with that number already exists");
 
             if (!ModelState.IsValid)
                 return View(model);

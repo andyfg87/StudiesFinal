@@ -1,10 +1,11 @@
 @*
-    Error al abrir un archivo. OpenFile se abre en otra ventana o pestaña, así que
-    se muestra una página sencilla con la ruta y un botón para cerrarla.
+    Error al abrir un archivo. Los archivos se abren en otra ventana o pestaña, así que
+    se muestra una página sencilla con un botón para cerrarla.
+    Por seguridad no se muestra la ruta del servidor: solo el nombre del archivo.
 *@
 @{
     Layout = null;
-    var path = ViewBag.Path as string;
+    var fileName = ViewBag.FileName as string;
 }
 
 <!DOCTYPE html>
@@ -22,13 +23,13 @@
             <div class="card-body text-center py-4">
                 <i class="bi bi-file-earmark-x fs-1 text-danger d-block mb-2" aria-hidden="true"></i>
                 <h1 class="h5">@ViewBag.Message</h1>
-                @if (!string.IsNullOrEmpty(path))
+                @if (!string.IsNullOrEmpty(fileName))
                 {
-                    <p class="small text-muted mb-1">Path:</p>
-                    <code class="d-block text-break mb-3">@path</code>
+                    <p class="fw-semibold text-break mb-3">@fileName</p>
                 }
                 <p class="small text-muted">
-                    The file may have been moved or renamed, or this computer cannot reach the studies server.
+                    The file may have been moved or renamed, or the studies server is not available.
+                    If the problem continues, contact the administrator.
                 </p>
                 <button type="button" class="btn btn-secondary" onclick="window.close()">Close</button>
             </div>

@@ -23,6 +23,7 @@
     var curTemplates = controller == "StudyTemplates" ? "page" : null;
     var curUsers = controller == "Users" ? "page" : null;
     var curLogs = controller == "Logs" ? "page" : null;
+    var curTrash = controller == "Trash" ? "page" : null;
 }
 
 <!DOCTYPE html>
@@ -79,6 +80,7 @@
                     {
                         <a asp-controller="Users" asp-action="Index" aria-current="@curUsers">Users</a>
                         <a asp-controller="Logs" asp-action="Index" aria-current="@curLogs">Activity</a>
+                        <a asp-controller="Trash" asp-action="Index" aria-current="@curTrash">Deleted</a>
                     }
                 </nav>
             }
@@ -126,6 +128,7 @@
                     <div class="grp">Administration</div>
                     <a class="sub" asp-controller="Users" asp-action="Index">Users</a>
                     <a class="sub" asp-controller="Logs" asp-action="Index">Activity</a>
+                    <a class="sub" asp-controller="Trash" asp-action="Index">Deleted items</a>
                 }
                 <a class="sub" asp-controller="Account" asp-action="ChangePassword">Change password</a>
             </nav>

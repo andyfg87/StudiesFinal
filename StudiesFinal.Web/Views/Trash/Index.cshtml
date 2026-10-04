@@ -1,0 +1,156 @@
+@model TrashVM
+
+@{
+    ViewData["Title"] = "Deleted items";
+    var total = Model.Studies.Count + Model.Patients.Count + Model.Templates.Count + Model.Users.Count;
+
+    string When(DateTime? d) => d?.ToString("MM/dd/yyyy HH:mm") ?? "";
+}
+
+<div class="ls-head">
+    <div class="d-flex align-items-center gap-3">
+        <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-trash3"></i></span>
+        <div>
+            <h2>Deleted items</h2>
+            <div class="ls-sub">Deleted records are kept in the database and can be restored</div>
+        </div>
+    </div>
+</div>
+
+@if (total == 0)
+{
+    <div class="card shadow-sm">
+        <div class="card-body text-muted">There are no deleted items.</div>
+    </div>
+}
+
+@if (Model.Studies.Count > 0)
+{
+    <h5 id="studies" class="mt-4 mb-2">Studies <span class="text-muted small">(@Model.Studies.Count)</span></h5>
+    <div class="card shadow-sm mb-3">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle ls-table mb-0">
+                <thead>
+                    <tr><th>#</th><th>Date</th><th>Study</th><th>Patient</th><th>Status</th><th>Deleted</th><th>By</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Studies)
+                    {
+                        <tr>
+                            <td data-label="#">@s.Id</td>
+                            <td data-label="Date" class="text-nowrap">@s.StudyDate.ToString("MM/dd/yyyy")</td>
+                            <td data-label="Study">@s.StudyName</td>
+                            <td data-label="Patient">
+                                @s.Patient?.Name
+                                @if (s.Patient?.IsDeleted == true)
+                                {
+                                    <span class="ls-pill warning ms-1" title="The patient is deleted too; it will be restored with the study">deleted</span>
+                                }
+                            </td>
+                            <td data-label="Status">@s.Status</td>
+                            <td data-label="Deleted" class="text-nowrap small">@When(s.DeletedAt)</td>
+                            <td data-label="By" class="small">@s.DeletedByName</td>
+                            <td class="text-end">
+                                <form asp-action="RestoreStudy" asp-route-id="@s.Id" method="post" onsubmit="return confirm('Restore study @s.Id?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Patients.Count > 0)
+{
+    <h5 id="patients" class="mt-4 mb-2">Patients <span class="text-muted small">(@Model.Patients.Count)</span></h5>
+    <div class="card shadow-sm mb-3">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle ls-table mb-0">
+                <thead>
+                    <tr><th>#</th><th>Name</th><th>D.O.B.</th><th>Deleted</th><th>By</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Patients)
+                    {
+                        <tr>
+                            <td data-label="#">@p.Id</td>
+                            <td data-label="Name">@p.Name</td>
+                            <td data-label="D.O.B." class="text-nowrap">@p.DateOfBirth?.ToString("MM/dd/yyyy")</td>
+                            <td data-label="Deleted" class="text-nowrap small">@When(p.DeletedAt)</td>
+                            <td data-label="By" class="small">@p.DeletedByName</td>
+                            <td class="text-end">
+                                <form asp-action="RestorePatient" asp-route-id="@p.Id" method="post" onsubmit="return confirm('Restore patient @p.Id?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Templates.Count > 0)
+{
+    <h5 id="templates" class="mt-4 mb-2">Templates <span class="text-muted small">(@Model.Templates.Count)</span></h5>
+    <div class="card shadow-sm mb-3">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle ls-table mb-0">
+                <thead>
+                    <tr><th>Title</th><th>Generic name</th><th>Deleted</th><th>By</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Templates)
+                    {
+                        <tr>
+                            <td data-label="Title">@t.StudyTitle</td>
+                            <td data-label="Generic name">@t.GenericName</td>
+                            <td data-label="Deleted" class="text-nowrap small">@When(t.DeletedAt)</td>
+                            <td data-label="By" class="small">@t.DeletedByName</td>
+                            <td class="text-end">
+                                <form asp-action="RestoreTemplate" asp-route-id="@t.Id" method="post" onsubmit="return confirm('Restore this template?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Users.Count > 0)
+{
+    <h5 id="users" class="mt-4 mb-2">Users <span class="text-muted small">(@Model.Users.Count)</span></h5>
+    <div class="card shadow-sm mb-3">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle ls-table mb-0">
+                <thead>
+                    <tr><th>Username</th><th>Name</th><th>Role</th><th>Deleted</th><th>By</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model.Users)
+                    {
+                        <tr>
+                            <td data-label="Username">@u.Username</td>
+                            <td data-label="Name">@u.FullName</td>
+                            <td data-label="Role">@u.Role.RoleLabel()</td>
+                            <td data-label="Deleted" class="text-nowrap small">@When(u.DeletedAt)</td>
+                            <td data-label="By" class="small">@u.DeletedByName</td>
+                            <td class="text-end">
+                                <form asp-action="RestoreUser" asp-route-id="@u.Id" method="post" onsubmit="return confirm('Restore user @u.Username?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

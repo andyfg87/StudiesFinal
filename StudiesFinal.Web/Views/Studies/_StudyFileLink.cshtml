@@ -1,15 +1,14 @@
 @*
-    Un archivo del estudio: nombre, ruta completa y formas de abrirlo.
+    Un archivo del estudio: nombre y formas de abrirlo. Por seguridad no se muestra la ruta
+    del servidor; el archivo se abre a través de la web (Studies/OpenFile).
       - Open beside: ventana aparte en la mitad derecha de la pantalla (para llenar el informe a la vez)
       - New tab:     pestaña nueva con el visor del navegador
       - PDF reader:  descarga el archivo; al abrirlo se usa el lector de PDF instalado
-      - Copy path:   copia \\192.168.199.140\...; pegada en el Explorador o en Win+R abre el
-                     archivo original con el lector predeterminado
 *@
 @model StudyFileLink
 
 @{
-    var fileName = System.IO.Path.GetFileName(Model.Path);
+    var fileName = System.IO.Path.GetFileName(Model.Path.TrimEnd('\\', '/'));
     var openUrl = Url.Action("OpenFile", "Studies", new { id = Model.StudyId, slot = Model.Slot });
     var downloadUrl = Url.Action("OpenFile", "Studies", new { id = Model.StudyId, slot = Model.Slot, download = true });
 }
@@ -17,9 +16,8 @@
 <div class="sf-file-item">
     <a class="sf-file" href="@openUrl" target="_blank" rel="noopener" data-open-beside title="Open beside the form">
         <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
-        <span class="small fw-semibold">@fileName</span>
+        <span class="small fw-semibold text-break">@fileName</span>
     </a>
-    <code class="sf-file-path" title="@Model.Path">@Model.Path</code>
     <div class="sf-file-actions">
         <a class="btn btn-sm btn-primary" href="@openUrl" target="_blank" rel="noopener" data-open-beside>
             <i class="bi bi-layout-split me-1" aria-hidden="true"></i>Open beside
@@ -30,8 +28,5 @@
         <a class="btn btn-sm btn-outline-secondary" href="@downloadUrl" title="Download and open with the PDF reader installed on this computer">
             <i class="bi bi-filetype-pdf me-1" aria-hidden="true"></i>PDF reader
         </a>
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-path="@Model.Path" title="Copy the path to paste it in File Explorer or Win+R">
-            <i class="bi bi-clipboard me-1" aria-hidden="true"></i><span>Copy path</span>
-        </button>
     </div>
 </div>
