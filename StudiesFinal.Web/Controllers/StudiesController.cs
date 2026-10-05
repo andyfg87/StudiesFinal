@@ -106,7 +106,9 @@ namespace StudiesFinal.Web.Controllers
                 ["from"] = from?.ToString("yyyy-MM-dd"),
                 ["to"] = to?.ToString("yyyy-MM-dd"),
                 ["sortBy"] = sortBy,
-                ["sortOrder"] = sortOrder
+                ["sortOrder"] = sortOrder,
+                ["pageNumber"] = pageNumber,
+                ["pageSize"] = pageSize
             };
 
             ViewBag.Status = status;
@@ -214,7 +216,7 @@ namespace StudiesFinal.Web.Controllers
                 return await ChangeStatus(study.Id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Study created and sent to sign.");
 
             TempData["Success"] = "Study created.";
-            return RedirectToAction(nameof(Details), new { key = study.Id });
+            return RedirectToChild(nameof(Details), new { key = study.Id });
         }
 
         // ======================= EDICIÓN =======================
@@ -229,7 +231,7 @@ namespace StudiesFinal.Web.Controllers
                 TempData["Error"] = study.IsLocked
                     ? "This study is signed. Only the doctor can unlock it for editing."
                     : "You are not allowed to edit this study in its current phase.";
-                return RedirectToAction(nameof(Details), new { key });
+                return RedirectToChild(nameof(Details), new { key });
             }
 
             var model = new StudyInputVM();
@@ -250,7 +252,7 @@ namespace StudiesFinal.Web.Controllers
             if (!StudyWorkflow.CanEdit(study, User))
             {
                 TempData["Error"] = "This study can no longer be edited (it may have been signed in the meantime).";
-                return RedirectToAction(nameof(Details), new { key = model.Id });
+                return RedirectToChild(nameof(Details), new { key = model.Id });
             }
 
             var patient = model.PatientId.HasValue ? await _patientRepository.GetByIdAsync(model.PatientId.Value) : null;
@@ -283,7 +285,7 @@ namespace StudiesFinal.Web.Controllers
                 return await ChangeStatus(study.Id, StudyWorkflow.CanSendToSign, StudyStatus.ToSign, "Changes saved and study sent to sign.");
 
             TempData["Success"] = "Changes saved.";
-            return RedirectToAction(nameof(Details), new { key = study.Id });
+            return RedirectToChild(nameof(Details), new { key = study.Id });
         }
 
         // ======================= FLUJO DE TRABAJO =======================
@@ -310,7 +312,7 @@ namespace StudiesFinal.Web.Controllers
             if (!StudyWorkflow.CanSign(study, User))
             {
                 TempData["Error"] = "This study is not waiting to be signed.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return RedirectToChild(nameof(Details), new { key = id });
             }
 
             study.Status = StudyStatus.Completed;
@@ -339,13 +341,13 @@ namespace StudiesFinal.Web.Controllers
                     .Select(x => (int?)x.Id)
                     .FirstOrDefaultAsync();
                 if (nextId.HasValue)
-                    return RedirectToAction(nameof(Details), new { key = nextId.Value });
+                    return RedirectToChild(nameof(Details), new { key = nextId.Value });
 
                 TempData["Success"] = TempData.Peek("Success") + " There are no more studies to sign.";
-                return RedirectToAction(nameof(Index), new { status = nameof(StudyStatus.ToSign) });
+                return RedirectToList(new { status = nameof(StudyStatus.ToSign) });
             }
 
-            return RedirectToAction(nameof(Details), new { key = id });
+            return RedirectToChild(nameof(Details), new { key = id });
         }
 
         /// <summary>
@@ -364,7 +366,7 @@ namespace StudiesFinal.Web.Controllers
             if (study.Status != StudyStatus.Completed)
             {
                 TempData["Error"] = "A PDF can only be generated for signed studies.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return RedirectToChild(nameof(Details), new { key = id });
             }
 
             var error = await SaveSignedPdf(study);
@@ -373,7 +375,7 @@ namespace StudiesFinal.Web.Controllers
             else
                 TempData["Error"] = error;
 
-            return RedirectToAction(nameof(Details), new { key = id });
+            return RedirectToChild(nameof(Details), new { key = id });
         }
 
         /// <summary>PDF del informe generado al vuelo (vista previa, sin guardar en el servidor).</summary>
@@ -402,7 +404,7 @@ namespace StudiesFinal.Web.Controllers
             if (!StudyWorkflow.CanUnlock(study, User))
             {
                 TempData["Error"] = "Only the doctor can unlock a signed study.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return RedirectToChild(nameof(Details), new { key = id });
             }
 
             var previous = new { study.SignedAt, study.SignedByName, study.SignedPdfPath };
@@ -421,7 +423,7 @@ namespace StudiesFinal.Web.Controllers
                 new { id, reason, previous.SignedAt, previous.SignedByName, previous.SignedPdfPath });
 
             TempData["Success"] = "Study unlocked. It is back in To sign.";
-            return RedirectToAction(nameof(Details), new { key = id });
+            return RedirectToChild(nameof(Details), new { key = id });
         }
 
         [HttpPost]
@@ -436,7 +438,7 @@ namespace StudiesFinal.Web.Controllers
             if (!StudyWorkflow.CanDelete(study, User))
             {
                 TempData["Error"] = "A signed study cannot be deleted.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return RedirectToChild(nameof(Details), new { key = id });
             }
 
             var status = study.Status;
@@ -446,7 +448,7 @@ namespace StudiesFinal.Web.Controllers
                 new { id, study.PatientId, study.StudyName });
 
             TempData["Success"] = "Study deleted.";
-            return RedirectToAction(nameof(Index), new { status = status.ToString() });
+            return RedirectToList(new { status = status.ToString() });
         }
 
         // Las acciones genéricas de borrado no se usan: el borrado pasa por DeleteStudy
@@ -518,7 +520,7 @@ namespace StudiesFinal.Web.Controllers
             if (!canChange(study, User))
             {
                 TempData["Error"] = "The phase of this study cannot be changed.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return RedirectToChild(nameof(Details), new { key = id });
             }
 
             var from = study.Status;
@@ -530,7 +532,7 @@ namespace StudiesFinal.Web.Controllers
             await _logger.LogInformation($"Study {id}: {from.Label()} → {target.Label()}", nameof(StudiesController), "ChangeStatus", new { id, from = from.ToString(), to = target.ToString() });
 
             TempData["Success"] = message;
-            return RedirectToAction(nameof(Details), new { key = id });
+            return RedirectToChild(nameof(Details), new { key = id });
         }
 
         private async Task<Study?> LoadStudy(int id)

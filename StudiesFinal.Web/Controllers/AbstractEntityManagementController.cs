@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using StudiesFinal.Models.Interface;
+using StudiesFinal.Web.Extensions;
 using StudiesFinal.Web.Interface;
 using StudiesFinal.Web.Paginations;
 
@@ -42,6 +43,19 @@ namespace StudiesFinal.Web.Controllers
             await _logger.LogError(message, ex, GetControllerName(), action, data);
         }
 
+        // ---- Volver al listado con sus filtros (ver Extensions/ListRoute) ----------
+
+        /// <summary>Al Index con los filtros que traía la petición; si no traía, con <paramref name="fallback"/>.</summary>
+        protected IActionResult RedirectToList(object? fallback = null)
+        {
+            var filters = Request.ListFilters();
+            return RedirectToAction(nameof(Index), filters.Count > 0 ? filters : new RouteValueDictionary(fallback));
+        }
+
+        /// <summary>A otra página del mismo listado (Details, Edit…) conservando los filtros.</summary>
+        protected IActionResult RedirectToChild(string action, object values)
+            => RedirectToAction(action, Request.WithListFilters(values));
+
         public virtual async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20, string sortBy = "Id", string sortOrder = "asc")
         {
             var query = await _repository.GetAll();
@@ -68,7 +82,7 @@ namespace StudiesFinal.Web.Controllers
                 await _repository.SaveChangesAsync();
 
                 await LogInformation(nameof(Create), inputViewModel);
-                return RedirectToAction(nameof(Index));
+                return RedirectToList();
             }
             catch (Exception ex)
             {
@@ -119,7 +133,7 @@ namespace StudiesFinal.Web.Controllers
                 await _repository.SaveChangesAsync();
 
                 await LogInformation(nameof(Edit), inputModel);
-                return RedirectToAction(nameof(Index));
+                return RedirectToList();
             }
             catch (Exception ex)
             {
@@ -149,7 +163,7 @@ namespace StudiesFinal.Web.Controllers
 
             await LogInformation(nameof(Delete), displayModel);
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToList();
         }
 
         protected virtual async Task<PaginatedList<TDisplayViewModel>> GetPaginatedData(

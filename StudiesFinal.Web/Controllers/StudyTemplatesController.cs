@@ -33,6 +33,7 @@ namespace StudiesFinal.Web.Controllers
         public override async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 0, string sortBy = "title", string sortOrder = "asc")
         {
             var query = await _repository.GetAll(orderBy: q => q.OrderBy(t => t.GenericName).ThenBy(t => t.StudyTitle));
+            ViewBag.RouteValues = new RouteValueDictionary { ["pageNumber"] = pageNumber, ["pageSize"] = pageSize };
             return View(await GetPaginatedData(query, pageNumber, pageSize));
         }
 
@@ -74,7 +75,7 @@ namespace StudiesFinal.Web.Controllers
             await _logger.LogInformation($"Template deleted: {template.StudyTitle}", nameof(StudyTemplatesController), nameof(DeleteTemplate));
 
             TempData["Success"] = "Template deleted.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToList();
         }
 
         /// <summary>Contenido de la plantilla para rellenar un estudio nuevo (JSON).</summary>

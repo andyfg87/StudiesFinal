@@ -13,7 +13,7 @@
 }
 
 <nav class="crumbs" aria-label="Breadcrumb">
-    <a asp-action="Index" asp-route-status="@Model.Status">Studies · @Model.Status.Label()</a> /
+    <a href="@Url.BackToList(new { status = Model.Status.ToString() })">Studies · @Model.Status.Label()</a> /
     <span>#@Model.Id</span>
 </nav>
 
@@ -31,13 +31,15 @@
     </div>
 
     <div class="d-flex flex-wrap gap-2">
+        @Html.BackButton(new { status = Model.Status.ToString() })
+
         <a asp-action="Print" asp-route-id="@Model.Id" target="_blank" rel="noopener" class="btn btn-outline-secondary">
             <i class="bi bi-printer me-1" aria-hidden="true"></i>Print
         </a>
 
         @if (canEdit)
         {
-            <a asp-action="Edit" asp-route-key="@Model.Id" class="btn btn-outline-primary">
+            <a href="@Url.ListChild("Edit", new { key = Model.Id })" class="btn btn-outline-primary">
                 <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
             </a>
         }

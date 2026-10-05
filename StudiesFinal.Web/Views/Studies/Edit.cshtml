@@ -9,8 +9,8 @@
 
 <nav class="crumbs" aria-label="Breadcrumb">
 
-    <h2> <a asp-action="Index" asp-route-status="@Model.Status">Studies · @Model.Status.Label()</a> /
-    <a asp-action="Details" asp-route-key="@Model.Id">#@Model.Id</a> /
+    <h2> <a href="@Url.BackToList(new { status = Model.Status.ToString() })">Studies · @Model.Status.Label()</a> /
+    <a href="@Url.ListChild("Details", new { key = Model.Id })">#@Model.Id</a> /
         <span>Edit</span>
     </h2>
 </nav>
@@ -22,6 +22,10 @@
             <h2>Edit study</h2>
             <div class="ls-sub">@Model.PatientLabel</div>
         </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        @Html.BackButton(new { status = Model.Status.ToString() })
     </div>
 </div>
 

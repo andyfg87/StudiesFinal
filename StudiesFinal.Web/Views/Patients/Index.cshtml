@@ -2,6 +2,9 @@
 @model PaginatedList<PatientDisplayVM>
 
 @{
+    // Filtros del listado: viajan a Create/Edit/Details para que Back vuelva aquí igual
+    var listRoute = ViewBag.RouteValues as RouteValueDictionary;
+
     ViewData["Title"] = "Patients";
     var fSearch = Context.Request.Query["search"].ToString();
     var fDob = Context.Request.Query["dob"].ToString();
@@ -18,7 +21,7 @@
     </div>
 
     <div class="d-flex flex-wrap gap-2">
-        <a asp-action="Create" class="btn btn-primary">
+        <a href="@Url.ListChild("Create", null, listRoute)" class="btn btn-primary">
             <i class="bi bi-person-plus me-1" aria-hidden="true"></i>New patient
         </a>
     </div>
@@ -92,13 +95,13 @@
                         <td data-label="LastName">
                             <div class="ls-device">
                                 <span class="ls-tile" aria-hidden="true"><i class="bi bi-person"></i></span>
-                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.LastName ?? "(no name)")</a>
+                                <a class="n text-reset text-decoration-none fw-semibold" href="@Url.ListChild("Details", new { key = item.Id }, listRoute)">@(item.LastName ?? "(no name)")</a>
                             </div>
                         </td>
                         <td data-label="Name">
                             <div class="ls-device">
                                 <span class="ls-tile" aria-hidden="true"><i class="bi bi-person"></i></span>
-                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.Name ?? "(no last name)")</a>
+                                <a class="n text-reset text-decoration-none fw-semibold" href="@Url.ListChild("Details", new { key = item.Id }, listRoute)">@(item.Name ?? "(no last name)")</a>
                             </div>
                         </td>
                         <td data-label="Date of birth" class="text-nowrap">
@@ -116,11 +119,11 @@
                                    title="New study" aria-label="New study for @item.Name">
                                     <i class="bi bi-file-earmark-plus" aria-hidden="true"></i>
                                 </a>
-                                <a asp-action="Edit" asp-route-key="@item.Id" class="btn btn-sm btn-outline-secondary"
+                                <a href="@Url.ListChild("Edit", new { key = item.Id }, listRoute)" class="btn btn-sm btn-outline-secondary"
                                    title="Edit" aria-label="Edit @item.Name">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <a asp-action="Details" asp-route-key="@item.Id" class="btn btn-sm btn-outline-primary text-nowrap">
+                                <a href="@Url.ListChild("Details", new { key = item.Id }, listRoute)" class="btn btn-sm btn-outline-primary text-nowrap">
                                     View <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                 </a>
                             </div>

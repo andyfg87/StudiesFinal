@@ -61,13 +61,14 @@ namespace StudiesFinal.Web.Controllers
                 "dob" => desc ? projected.OrderByDescending(p => p.DateOfBirth) : projected.OrderBy(p => p.DateOfBirth),
                 "studies" => desc ? projected.OrderByDescending(p => p.StudyCount) : projected.OrderBy(p => p.StudyCount),
                 "last" => desc ? projected.OrderByDescending(p => p.LastStudyDate) : projected.OrderBy(p => p.LastStudyDate),
-                "lastName" => desc ? projected.OrderByDescending(p => p.LastName) : projected.OrderByDescending(p => p.LastName),
+                "lastName" => desc ? projected.OrderByDescending(p => p.LastName) : projected.OrderBy(p => p.LastName),
                 _ => desc ? projected.OrderByDescending(p => p.Name) : projected.OrderBy(p => p.Name)
             };
 
             var routeValues = new RouteValueDictionary
             {
-                ["search"] = search, ["dob"] = dob?.ToString("yyyy-MM-dd"), ["sortBy"] = sortBy, ["sortOrder"] = sortOrder
+                ["search"] = search, ["dob"] = dob?.ToString("yyyy-MM-dd"), ["sortBy"] = sortBy, ["sortOrder"] = sortOrder,
+                ["pageNumber"] = pageNumber, ["pageSize"] = pageSize
             };
             ViewBag.CurrentSortBy = sortBy;
             ViewBag.CurrentSortOrder = sortOrder;
@@ -126,7 +127,7 @@ namespace StudiesFinal.Web.Controllers
             if (Request.Query["returnToStudy"] == "1")
                 return RedirectToAction("Create", "Studies", new { patientId = model.Id });
 
-            return RedirectToAction(nameof(Details), new { key = model.Id });
+            return RedirectToChild(nameof(Details), new { key = model.Id });
         }
 
         [HttpPost]
@@ -146,7 +147,7 @@ namespace StudiesFinal.Web.Controllers
             await LogInformation(nameof(Edit), model);
 
             TempData["Success"] = "Patient updated.";
-            return RedirectToAction(nameof(Details), new { key = model.Id });
+            return RedirectToChild(nameof(Details), new { key = model.Id });
         }
 
         [HttpPost]
@@ -158,7 +159,7 @@ namespace StudiesFinal.Web.Controllers
             if (hasStudies)
             {
                 TempData["Error"] = "The patient cannot be deleted because they have studies.";
-                return RedirectToAction(nameof(Details), new { key = id });
+                return RedirectToChild(nameof(Details), new { key = id });
             }
 
             await _repository.DeleteAsync(id);
@@ -166,7 +167,7 @@ namespace StudiesFinal.Web.Controllers
             await _logger.LogInformation($"Patient deleted: {id}", nameof(PatientsController), nameof(DeletePatient));
 
             TempData["Success"] = "Patient deleted.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToList();
         }
 
         private static readonly string[] DobFormats = { "MM/dd/yyyy", "M/d/yyyy", "MM-dd-yyyy", "M-d-yyyy", "yyyy-MM-dd" };

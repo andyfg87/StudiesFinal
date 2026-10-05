@@ -8,13 +8,17 @@
 }
 
 <nav class="crumbs" aria-label="Breadcrumb">
-    <a asp-action="Index">Templates</a> / <span>New template</span>
+    <a href="@Url.BackToList()">Templates</a> / <span>New template</span>
 </nav>
 
 <div class="ls-head">
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
         <h2>New template</h2>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        @Html.BackButton()
     </div>
 </div>
 

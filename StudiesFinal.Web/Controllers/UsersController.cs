@@ -51,7 +51,8 @@ namespace StudiesFinal.Web.Controllers
 
             ViewBag.CurrentSortBy = sortBy;
             ViewBag.CurrentSortOrder = sortOrder;
-            ViewBag.RouteValues = new RouteValueDictionary { ["search"] = search, ["sortBy"] = sortBy, ["sortOrder"] = sortOrder };
+            ViewBag.RouteValues = new RouteValueDictionary { ["search"] = search, ["sortBy"] = sortBy, ["sortOrder"] = sortOrder,
+                ["pageNumber"] = pageNumber, ["pageSize"] = pageSize };
 
             return View(await GetPaginatedData(query, pageNumber, pageSize));
         }
@@ -85,7 +86,7 @@ namespace StudiesFinal.Web.Controllers
             await LogInformation(nameof(Create), model);
 
             TempData["Success"] = $"User {user.Username} created.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToList();
         }
 
         public override async Task<IActionResult> Edit(Guid key)
@@ -130,7 +131,7 @@ namespace StudiesFinal.Web.Controllers
             await LogInformation(nameof(Edit), model);
 
             TempData["Success"] = $"User {user.Username} updated.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToList();
         }
 
         [HttpPost]
@@ -140,7 +141,7 @@ namespace StudiesFinal.Web.Controllers
             if (id == User.UserId())
             {
                 TempData["Error"] = "You cannot delete your own user.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToList();
             }
 
             var user = await _repository.GetByIdAsync(id);
@@ -160,7 +161,7 @@ namespace StudiesFinal.Web.Controllers
                 TempData["Error"] = "The user could not be deleted. You can deactivate it instead.";
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToList();
         }
 
         private async Task<bool> UsernameExists(string username, Guid? exceptId)
