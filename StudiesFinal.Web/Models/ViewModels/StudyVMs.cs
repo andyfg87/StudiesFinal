@@ -73,7 +73,7 @@ namespace StudiesFinal.Web.Models.ViewModels
             StudyName = entity.StudyName;
             Information = entity.Information;
             PatientId = entity.PatientId;
-            PatientName = entity.Patient?.Name;
+            PatientName =$"{entity.Patient?.LastName ?? ""} {entity.Patient?.Name}";
             PatientDateOfBirth = entity.Patient?.DateOfBirth;
             Status = entity.Status;
             Processed = entity.Processed;
@@ -185,7 +185,7 @@ namespace StudiesFinal.Web.Models.ViewModels
             Id = entity.Id;
             StudyDate = entity.StudyDate;
             PatientId = entity.PatientId;
-            PatientLabel = entity.Patient != null ? $"{entity.Patient.Id} · {entity.Patient.Name}" : null;
+            PatientLabel = entity.Patient != null ? $"{entity.Patient.Id} · {entity.Patient.LastName ?? ""} · {entity.Patient.Name}" : null;
             StudyName = entity.StudyName;
             Information = entity.Information;
             Processed = entity.Processed;

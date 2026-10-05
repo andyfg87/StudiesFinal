@@ -35,9 +35,9 @@ namespace StudiesFinal.Web.Controllers
             if (!string.IsNullOrEmpty(search))
             {
                 if (int.TryParse(search, out var id))
-                    query = query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{search}%"));
+                    query = query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{search}%") || EF.Functions.Like(p.LastName!, $"%{search}%"));
                 else
-                    query = query.Where(p => EF.Functions.Like(p.Name!, $"%{search}%"));
+                    query = query.Where(p => EF.Functions.Like(p.Name!, $"%{search}%") || EF.Functions.Like(p.LastName!, $"%{search}%"));
             }
 
             if (dob.HasValue)
@@ -48,6 +48,7 @@ namespace StudiesFinal.Web.Controllers
             {
                 Id = p.Id,
                 Name = p.Name,
+                LastName = p.LastName,
                 DateOfBirth = p.DateOfBirth,
                 StudyCount = p.Studies.Count(),
                 LastStudyDate = p.Studies.Max(s => (DateTime?)s.StudyDate)
@@ -60,6 +61,7 @@ namespace StudiesFinal.Web.Controllers
                 "dob" => desc ? projected.OrderByDescending(p => p.DateOfBirth) : projected.OrderBy(p => p.DateOfBirth),
                 "studies" => desc ? projected.OrderByDescending(p => p.StudyCount) : projected.OrderBy(p => p.StudyCount),
                 "last" => desc ? projected.OrderByDescending(p => p.LastStudyDate) : projected.OrderBy(p => p.LastStudyDate),
+                "lastName" => desc ? projected.OrderByDescending(p => p.LastName) : projected.OrderByDescending(p => p.LastName),
                 _ => desc ? projected.OrderByDescending(p => p.Name) : projected.OrderBy(p => p.Name)
             };
 
@@ -187,17 +189,19 @@ namespace StudiesFinal.Web.Controllers
             else if (int.TryParse(q, out var id))
                 query = query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{q}%"));
             else
-                query = query.Where(p => EF.Functions.Like(p.Name!, $"%{q}%"));
+                query = query.Where(p => EF.Functions.Like(p.Name!, $"%{q}%") || EF.Functions.Like(p.LastName!, $"%{q}%"));
 
             var results = await query
                 .OrderBy(p => p.Name)
+                .ThenBy(p => p.LastName)
                 .Take(20)
-                .Select(p => new { id = p.Id, name = p.Name, dob = p.DateOfBirth })
+                .Select(p => new { id = p.Id, lastName = p.LastName, name = p.Name, dob = p.DateOfBirth })
                 .ToListAsync();
 
             return Json(results.Select(p => new
             {
                 p.id,
+                p.lastName,
                 p.name,
                 dob = p.dob?.ToString("MM/dd/yyyy")
             }));

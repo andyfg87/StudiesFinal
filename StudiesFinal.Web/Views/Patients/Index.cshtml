@@ -62,6 +62,7 @@
             <thead>
                 <tr>
                     <th>@Html.SortHeader("#", "id")</th>
+                    <th>@Html.SortHeader("Last Name", "lastName")</th>
                     <th>@Html.SortHeader("Name", "name")</th>
                     <th>@Html.SortHeader("Date of birth", "dob")</th>
                     <th class="text-center">@Html.SortHeader("Studies", "studies")</th>
@@ -88,10 +89,16 @@
                 {
                     <tr>
                         <td data-label="#" class="text-muted">@item.Id</td>
+                        <td data-label="LastName">
+                            <div class="ls-device">
+                                <span class="ls-tile" aria-hidden="true"><i class="bi bi-person"></i></span>
+                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.LastName ?? "(no name)")</a>
+                            </div>
+                        </td>
                         <td data-label="Name">
                             <div class="ls-device">
                                 <span class="ls-tile" aria-hidden="true"><i class="bi bi-person"></i></span>
-                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.Name ?? "(no name)")</a>
+                                <a class="n text-reset text-decoration-none fw-semibold" asp-action="Details" asp-route-key="@item.Id">@(item.Name ?? "(no last name)")</a>
                             </div>
                         </td>
                         <td data-label="Date of birth" class="text-nowrap">

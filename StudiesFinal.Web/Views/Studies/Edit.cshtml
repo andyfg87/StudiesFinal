@@ -8,9 +8,11 @@
 }
 
 <nav class="crumbs" aria-label="Breadcrumb">
-    <a asp-action="Index" asp-route-status="@Model.Status">Studies · @Model.Status.Label()</a> /
+
+    <h2> <a asp-action="Index" asp-route-status="@Model.Status">Studies · @Model.Status.Label()</a> /
     <a asp-action="Details" asp-route-key="@Model.Id">#@Model.Id</a> /
-    <span>Edit</span>
+        <span>Edit</span>
+    </h2>
 </nav>
 
 <div class="ls-head">

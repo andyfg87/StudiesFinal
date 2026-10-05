@@ -33,6 +33,12 @@
                     </div>
 
                     <div class="mb-3">
+                        <label asp-for="LastName" class="form-label"></label>
+                        <input asp-for="LastName" class="form-control" autofocus />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="DateOfBirth" class="form-label"></label>
                         <input asp-for="DateOfBirth" type="date" class="form-control" />
                         <span asp-validation-for="DateOfBirth" class="text-danger"></span>

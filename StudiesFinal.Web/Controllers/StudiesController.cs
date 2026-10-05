@@ -64,7 +64,7 @@ namespace StudiesFinal.Web.Controllers
                 var like = $"%{search}%";
                 baseQuery = int.TryParse(search, out var number)
                     ? baseQuery.Where(x => x.PatientId == number || x.Id == number || EF.Functions.Like(x.Patient!.Name!, like))
-                    : baseQuery.Where(x => EF.Functions.Like(x.Patient!.Name!, like) || EF.Functions.Like(x.StudyName!, like));
+                    : baseQuery.Where(x => EF.Functions.Like(x.Patient!.Name!, like) || EF.Functions.Like(x.Patient!.LastName!, like) || EF.Functions.Like(x.StudyName!, like));
             }
             if (dob.HasValue)
                 baseQuery = baseQuery.Where(x => x.Patient!.DateOfBirth >= dob.Value && x.Patient!.DateOfBirth < dob.Value.AddDays(1));
@@ -160,7 +160,7 @@ namespace StudiesFinal.Web.Controllers
                 if (patient != null)
                 {
                     model.PatientId = patient.Id;
-                    model.PatientLabel = $"{patient.Id} · {patient.Name}";
+                    model.PatientLabel = $"{patient.Id} · {patient.LastName ?? ""} · {patient.Name}";
                 }
             }
 
@@ -266,7 +266,7 @@ namespace StudiesFinal.Web.Controllers
                 var saved = new StudyInputVM();
                 saved.Import(study);
                 model.SavedFiles = saved.SavedFiles;
-                model.PatientLabel = patient != null ? $"{patient.Id} · {patient.Name}" : null;
+                model.PatientLabel = patient != null ? $"{patient.Id} · {patient.LastName} · {patient.Name}" : null;
                 ViewBag.CanSendToSign = StudyWorkflow.CanSendToSign(study, User);
                 return View(model);
             }
@@ -538,7 +538,7 @@ namespace StudiesFinal.Web.Controllers
 
         private async Task<IActionResult> CreateView(StudyInputVM model, Patient? patient)
         {
-            model.PatientLabel = patient != null ? $"{patient.Id} · {patient.Name}" : null;
+            model.PatientLabel = patient != null ? $"{patient.Id} · {patient.LastName ?? ""} · {patient.Name}" : null;
             model.Templates = await TemplateList(model.TemplateId);
             return View(nameof(Create), model);
         }

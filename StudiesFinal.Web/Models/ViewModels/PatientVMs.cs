@@ -12,6 +12,8 @@ namespace StudiesFinal.Web.Models.ViewModels
 
         [Display(Name = "Name")]
         public string? Name { get; set; }
+        [Display(Name = "Last Name")]
+        public string? LastName { get; set; }
 
         [Display(Name = "Date of birth")]
         public DateTime? DateOfBirth { get; set; }
@@ -27,6 +29,7 @@ namespace StudiesFinal.Web.Models.ViewModels
         {
             Id = entity.Id;
             Name = entity.Name;
+            LastName = entity.LastName;
             DateOfBirth = entity.DateOfBirth;
             StudyCount = entity.Studies?.Count ?? 0;
             LastStudyDate = entity.Studies?.Count > 0 ? entity.Studies.Max(s => s.StudyDate) : null;
@@ -45,6 +48,9 @@ namespace StudiesFinal.Web.Models.ViewModels
         [StringLength(100)]
         [Display(Name = "Name")]
         public string? Name { get; set; }
+        
+        [StringLength(250)]
+        public string? LastName { get; set; }
 
         [DataType(DataType.Date)]
         [Display(Name = "Date of birth")]
@@ -64,6 +70,7 @@ namespace StudiesFinal.Web.Models.ViewModels
         {
             Id = entity.Id;
             Name = entity.Name;
+            LastName = entity.LastName;
             DateOfBirth = entity.DateOfBirth;
             IsEdit = true;
         }
@@ -71,6 +78,7 @@ namespace StudiesFinal.Web.Models.ViewModels
         public void Merge(Patient entity)
         {
             entity.Name = Name?.Trim();
+            entity.LastName = LastName?.Trim();
             entity.DateOfBirth = DateOfBirth?.Date;
         }
     }
