@@ -26,6 +26,9 @@
 
     <div class="d-flex flex-wrap gap-2">
         @Html.BackButton(new { status = Model.Status.ToString() })
+        <a asp-action="Pdf" asp-route-id="@Model.Id" asp-route-download="true" class="btn btn-outline-secondary" title="Download the report as a PDF file (last saved version)">
+            <i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Save as PDF
+        </a>
     </div>
 </div>
 

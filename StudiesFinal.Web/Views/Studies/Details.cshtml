@@ -36,6 +36,9 @@
         <a asp-action="Print" asp-route-id="@Model.Id" target="_blank" rel="noopener" class="btn btn-outline-secondary">
             <i class="bi bi-printer me-1" aria-hidden="true"></i>Print
         </a>
+        <a asp-action="Pdf" asp-route-id="@Model.Id" asp-route-download="true" class="btn btn-outline-secondary" title="Download the report as a PDF file">
+            <i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i>Save as PDF
+        </a>
 
         @if (canEdit)
         {

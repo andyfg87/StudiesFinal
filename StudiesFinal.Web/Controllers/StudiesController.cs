@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using Microsoft.Extensions.Localization;
 using StudiesFinal.Models.Entities;
 using StudiesFinal.Models.Interface;
@@ -378,8 +379,11 @@ namespace StudiesFinal.Web.Controllers
             return RedirectToChild(nameof(Details), new { key = id });
         }
 
-        /// <summary>PDF del informe generado al vuelo (vista previa, sin guardar en el servidor).</summary>
-        public async Task<IActionResult> Pdf(int id)
+        /// <summary>
+        /// PDF del informe generado al vuelo (no se guarda en el servidor). download=true lo descarga
+        /// directamente ("Save as PDF"); si no, se abre en el navegador.
+        /// </summary>
+        public async Task<IActionResult> Pdf(int id, bool download = false)
         {
             var study = await LoadStudy(id);
             if (study == null)
@@ -387,7 +391,10 @@ namespace StudiesFinal.Web.Controllers
 
             var bytes = _pdf.Generate(study);
             var name = Path.GetFileName(_files.FileNameFor(study.StudyName, study.Patient?.Name, ".pdf"));
-            Response.Headers.ContentDisposition = $"inline; filename=\"{name}\"";
+            // SetHttpFileName codifica bien nombres con acentos (filename*=UTF-8'')
+            var disposition = new ContentDispositionHeaderValue(download ? "attachment" : "inline");
+            disposition.SetHttpFileName(name);
+            Response.Headers.ContentDisposition = disposition.ToString();
             return File(bytes, "application/pdf");
         }
 
