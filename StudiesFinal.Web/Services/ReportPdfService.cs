@@ -131,7 +131,7 @@ namespace StudiesFinal.Web.Services
                                 r.RelativeItem().Text(value ?? "").Bold();
                             });
 
-                        Field("Patient:", study.Patient?.Name, 0);
+                        Field("Patient:", study.Patient?.ReportName, 0);
                         Field("D.O.B:", study.Patient?.DateOfBirth?.ToString("MMM-dd-yy", Us), 12);
                         Field("Study Date:", study.StudyDate.ToString("MM/dd/yyyy", Us), 12);
                         Field("Test:", study.StudyName, 9);

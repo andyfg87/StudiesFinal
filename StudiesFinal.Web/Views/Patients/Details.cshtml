@@ -1,19 +1,19 @@
 @model PatientDisplayVM
 @{
-    ViewData["Title"] = Model.Name ?? $"Patient {Model.Id}";
+    ViewData["Title"] = string.IsNullOrEmpty(Model.FullName) ? $"Patient {Model.Id}" : Model.FullName;
     var studies = ViewBag.Studies as List<StudyDisplayVM> ?? new();
     var isAdmin = User.IsInRole(Roles.Admin);
 }
 
 <nav class="crumbs" aria-label="Breadcrumb">
-    <h2><a href="@Url.BackToList()">Patients</a> / <span>@Model.Name</span></h2>
+    <h2><a href="@Url.BackToList()">Patients</a> / <span>@Model.FullName</span></h2>
 </nav>
 
 <div class="ls-head">
     <div class="d-flex align-items-center gap-3">
         <span class="ls-tile lg" aria-hidden="true"><i class="bi bi-person"></i></span>
         <div>
-            <h2>@(Model.Name ?? "(no name)")</h2>
+            <h2>@(string.IsNullOrEmpty(Model.FullName) ? "(no name)" : Model.FullName)</h2>
             <div class="ls-sub">
                 Patient # @Model.Id
                 @if (Model.DateOfBirth.HasValue)

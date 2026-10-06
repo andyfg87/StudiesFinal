@@ -64,7 +64,7 @@ namespace StudiesFinal.Web.Controllers
             {
                 var like = $"%{search}%";
                 baseQuery = int.TryParse(search, out var number)
-                    ? baseQuery.Where(x => x.PatientId == number || x.Id == number || EF.Functions.Like(x.Patient!.Name!, like))
+                    ? baseQuery.Where(x => x.PatientId == number || x.Id == number || EF.Functions.Like(x.Patient!.Name!, like) || EF.Functions.Like(x.Patient!.LastName!, like))
                     : baseQuery.Where(x => EF.Functions.Like(x.Patient!.Name!, like) || EF.Functions.Like(x.Patient!.LastName!, like) || EF.Functions.Like(x.StudyName!, like));
             }
             if (dob.HasValue)
@@ -91,7 +91,8 @@ namespace StudiesFinal.Web.Controllers
             query = sortBy switch
             {
                 "id" => desc ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id),
-                "patient" => desc ? query.OrderByDescending(x => x.Patient!.Name) : query.OrderBy(x => x.Patient!.Name),
+                "patient" => desc ? query.OrderByDescending(x => x.Patient!.Name).ThenByDescending(x => x.Patient!.LastName)
+                                   : query.OrderBy(x => x.Patient!.Name).ThenBy(x => x.Patient!.LastName),
                 "study" => desc ? query.OrderByDescending(x => x.StudyName) : query.OrderBy(x => x.StudyName),
                 "signed" => desc ? query.OrderByDescending(x => x.SignedAt) : query.OrderBy(x => x.SignedAt),
                 _ => desc ? query.OrderByDescending(x => x.StudyDate).ThenByDescending(x => x.Id)
@@ -163,7 +164,7 @@ namespace StudiesFinal.Web.Controllers
                 if (patient != null)
                 {
                     model.PatientId = patient.Id;
-                    model.PatientLabel = $"{patient.Id} · {patient.LastName ?? ""} · {patient.Name}";
+                    model.PatientLabel = StudyInputVM.LabelFor(patient);
                 }
             }
 
@@ -269,7 +270,7 @@ namespace StudiesFinal.Web.Controllers
                 var saved = new StudyInputVM();
                 saved.Import(study);
                 model.SavedFiles = saved.SavedFiles;
-                model.PatientLabel = patient != null ? $"{patient.Id} · {patient.LastName} · {patient.Name}" : null;
+                model.PatientLabel = StudyInputVM.LabelFor(patient);
                 ViewBag.CanSendToSign = StudyWorkflow.CanSendToSign(study, User);
                 return View(model);
             }
@@ -390,7 +391,7 @@ namespace StudiesFinal.Web.Controllers
                 return NotFound();
 
             var bytes = _pdf.Generate(study);
-            var name = Path.GetFileName(_files.FileNameFor(study.StudyName, study.Patient?.Name, ".pdf"));
+            var name = Path.GetFileName(_files.FileNameFor(study.StudyName, study.Patient?.ReportName, ".pdf"));
             // SetHttpFileName codifica bien nombres con acentos (filename*=UTF-8'')
             var disposition = new ContentDispositionHeaderValue(download ? "attachment" : "inline");
             disposition.SetHttpFileName(name);
@@ -547,7 +548,7 @@ namespace StudiesFinal.Web.Controllers
 
         private async Task<IActionResult> CreateView(StudyInputVM model, Patient? patient)
         {
-            model.PatientLabel = patient != null ? $"{patient.Id} · {patient.LastName ?? ""} · {patient.Name}" : null;
+            model.PatientLabel = StudyInputVM.LabelFor(patient);
             model.Templates = await TemplateList(model.TemplateId);
             return View(nameof(Create), model);
         }

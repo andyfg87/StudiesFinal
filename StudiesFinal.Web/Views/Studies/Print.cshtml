@@ -23,7 +23,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>@Model.PatientName-@Model.StudyDate.ToString("MM-dd-yyyy") · @Model.StudyName</title>
+    <title>@Model.PatientReportName-@Model.StudyDate.ToString("MM-dd-yyyy") · @Model.StudyName</title>
     <style>
         @@page { size: letter; margin: 9mm 10mm 28mm 10mm; }
 
@@ -108,7 +108,7 @@
         </header>
 
         <table class="pt">
-            <tr><td class="l">Patient:</td><td>@Model.PatientName</td></tr>
+            <tr><td class="l">Patient:</td><td>@Model.PatientReportName</td></tr>
             <tr><td class="l">D.O.B:</td><td>@Model.PatientDateOfBirth?.ToString("MMM-dd-yy", us)</td></tr>
             <tr><td class="l">Study Date:</td><td>@Model.StudyDate.ToString("MM/dd/yyyy", us)</td></tr>
             <tr><td class="l">Test:</td><td>@Model.StudyName</td></tr>

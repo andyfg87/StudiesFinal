@@ -13,8 +13,9 @@
 }
 
 <nav class="crumbs" aria-label="Breadcrumb">
-    <a href="@Url.BackToList(new { status = Model.Status.ToString() })">Studies · @Model.Status.Label()</a> /
-    <span>#@Model.Id</span>
+    <h2><a href="@Url.BackToList(new { status = Model.Status.ToString() })">Studies · @Model.Status.Label()</a> /
+        <span>#@Model.Id</span>
+    </h2>
 </nav>
 
 <div class="ls-head">

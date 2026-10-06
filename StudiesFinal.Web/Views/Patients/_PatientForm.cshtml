@@ -12,20 +12,11 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <input type="hidden" asp-for="IsEdit" />
 
-                    <div class="mb-3">
-                        <label asp-for="Id" class="form-label"></label>
-                        @if (Model.IsEdit)
-                        {
-                            <input type="hidden" asp-for="Id" />
-                            <input class="form-control" value="@Model.Id" disabled />
-                        }
-                        else
-                        {
-                            <input asp-for="Id" class="form-control" />
-                            <div class="form-text">The next available number is suggested.</div>
-                        }
-                        <span asp-validation-for="Id" class="text-danger"></span>
-                    </div>
+                    @* El Nº de paciente no se muestra: al crear lo asigna el servidor *@
+                    @if (Model.IsEdit)
+                    {
+                        <input type="hidden" asp-for="Id" />
+                    }
 
                     <div class="mb-3">
                         <label asp-for="Name" class="form-label"></label>
@@ -35,7 +26,7 @@
 
                     <div class="mb-3">
                         <label asp-for="LastName" class="form-label"></label>
-                        <input asp-for="LastName" class="form-control" autofocus />
+                        <input asp-for="LastName" class="form-control" />
                         <span asp-validation-for="LastName" class="text-danger"></span>
                     </div>
 

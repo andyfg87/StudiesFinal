@@ -237,7 +237,7 @@
 
         var choose = function (p) {
             hidden.value = p.id;
-            search.value = p.id + " · " + (p.lastName) + " · " + (p.name || "");
+            search.value = p.id + " · " + (p.name || "");
             close();
         };
 
@@ -265,14 +265,10 @@
                             n.className = "flex-fill";
                             n.textContent = p.name || "(no name)";
 
-                            var ln = document.createElement("span");
-                            ln.className = "flex-fill";
-                            ln.textContent = p.lastName || "";
-
                             var d = document.createElement("span");
                             d.className = "small text-muted";
                             d.textContent = p.dob || "";
-                            b.append(id, ln, n, d);
+                            b.append(id, n, d);
                             b.addEventListener("click", function () { choose(p); });
                             results.appendChild(b);
                         });

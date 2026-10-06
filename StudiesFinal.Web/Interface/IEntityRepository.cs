@@ -29,5 +29,8 @@ namespace StudiesFinal.Web.Interface
         public Task<bool> RestoreAsync(TKey id);
 
         public Task SaveChangesAsync();
+
+        /// <summary>Deja de seguir una entidad (p. ej. un alta que falló al guardar, para reintentarla).</summary>
+        public Task DetachAsync(TEntity entity);
     }
 }

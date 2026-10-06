@@ -61,8 +61,8 @@ namespace StudiesFinal.Web.Controllers
                 "dob" => desc ? projected.OrderByDescending(p => p.DateOfBirth) : projected.OrderBy(p => p.DateOfBirth),
                 "studies" => desc ? projected.OrderByDescending(p => p.StudyCount) : projected.OrderBy(p => p.StudyCount),
                 "last" => desc ? projected.OrderByDescending(p => p.LastStudyDate) : projected.OrderBy(p => p.LastStudyDate),
-                "lastName" => desc ? projected.OrderByDescending(p => p.LastName) : projected.OrderBy(p => p.LastName),
-                _ => desc ? projected.OrderByDescending(p => p.Name) : projected.OrderBy(p => p.Name)
+                "lastName" => desc ? projected.OrderByDescending(p => p.LastName).ThenByDescending(p => p.Name) : projected.OrderBy(p => p.LastName).ThenBy(p => p.Name),
+                _ => desc ? projected.OrderByDescending(p => p.Name).ThenByDescending(p => p.LastName) : projected.OrderBy(p => p.Name).ThenBy(p => p.LastName)
             };
 
             var routeValues = new RouteValueDictionary
@@ -98,27 +98,35 @@ namespace StudiesFinal.Web.Controllers
 
         public override async Task<IActionResult> Create()
         {
-            // Propuesta: siguiente número libre (se puede cambiar por el que dé el equipo).
-            // Cuenta también los eliminados: su número sigue ocupado y se pueden restaurar.
-            var maxId = await (await _repository.GetAllIncludingDeleted()).MaxAsync(p => (int?)p.Id) ?? 0;
-            return View(new PatientInputVM { Id = maxId + 1 });
+            // El número lo asigna el servidor al guardar (no se muestra)
+            return View(new PatientInputVM());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public override async Task<IActionResult> Create(PatientInputVM model)
         {
-            var existing = await (await _repository.GetAllIncludingDeleted()).FirstOrDefaultAsync(p => p.Id == model.Id);
-            if (existing != null)
-                ModelState.AddModelError(nameof(model.Id), existing.IsDeleted
-                    ? "A deleted patient has that number. An admin can restore it from Deleted items."
-                    : "A patient with that number already exists");
-
+            ModelState.Remove(nameof(model.Id));
             if (!ModelState.IsValid)
                 return View(model);
 
-            await _repository.AddAsync(model.Export());
-            await _repository.SaveChangesAsync();
+            // Siguiente número libre. Cuenta también los eliminados: su número sigue ocupado y se
+            // pueden restaurar. Si otro usuario guarda a la vez y toma el mismo, se reintenta.
+            for (var attempt = 1; ; attempt++)
+            {
+                model.Id = (await (await _repository.GetAllIncludingDeleted()).MaxAsync(p => (int?)p.Id) ?? 0) + 1;
+                var patient = model.Export();
+                await _repository.AddAsync(patient);
+                try
+                {
+                    await _repository.SaveChangesAsync();
+                    break;
+                }
+                catch (DbUpdateException) when (attempt < 3)
+                {
+                    await _repository.DetachAsync(patient);
+                }
+            }
             await LogInformation(nameof(Create), model);
 
             TempData["Success"] = "Patient created.";
@@ -188,7 +196,7 @@ namespace StudiesFinal.Web.Controllers
                     System.Globalization.DateTimeStyles.None, out var dob))
                 query = query.Where(p => p.DateOfBirth >= dob.Date && p.DateOfBirth < dob.Date.AddDays(1));
             else if (int.TryParse(q, out var id))
-                query = query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{q}%"));
+                query = query.Where(p => p.Id == id || EF.Functions.Like(p.Name!, $"%{q}%") || EF.Functions.Like(p.LastName!, $"%{q}%"));
             else
                 query = query.Where(p => EF.Functions.Like(p.Name!, $"%{q}%") || EF.Functions.Like(p.LastName!, $"%{q}%"));
 
@@ -202,8 +210,7 @@ namespace StudiesFinal.Web.Controllers
             return Json(results.Select(p => new
             {
                 p.id,
-                p.lastName,
-                p.name,
+                name = Patient.FormatFull(p.name, p.lastName),
                 dob = p.dob?.ToString("MM/dd/yyyy")
             }));
         }

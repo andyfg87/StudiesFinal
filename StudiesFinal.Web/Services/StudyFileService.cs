@@ -84,7 +84,7 @@ namespace StudiesFinal.Web.Services
 
         public async Task<string> SaveBytesAsync(byte[] content, Study study, Patient? patient, string extension)
         {
-            var target = NewTargetPath(study.StudyName, patient?.Name, extension);
+            var target = NewTargetPath(study.StudyName, patient?.ReportName, extension);
             await File.WriteAllBytesAsync(target, content);
             return target;
         }

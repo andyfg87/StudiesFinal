@@ -29,5 +29,26 @@ namespace StudiesFinal.Models.Entities
 
         [StringLength(200)]
         public string? DeletedByName { get; set; }
+
+        // ---- Nombre para mostrar (solo lectura: EF no los mapea) -------------------
+
+        /// <summary>"Nombre Apellido": cómo se muestra el paciente en toda la aplicación.</summary>
+        public string FullName => FormatFull(Name, LastName);
+
+        /// <summary>"Apellido, Nombre": cómo se muestra en el informe (PDF e impresión).</summary>
+        public string ReportName => FormatReport(Name, LastName);
+
+        public static string FormatFull(string? name, string? lastName)
+            => $"{name?.Trim()} {lastName?.Trim()}".Trim();
+
+        public static string FormatReport(string? name, string? lastName)
+        {
+            name = name?.Trim();
+            lastName = lastName?.Trim();
+            // Pacientes importados de Access: el nombre completo está en Name y no tienen apellido
+            if (string.IsNullOrEmpty(lastName)) return name ?? "";
+            if (string.IsNullOrEmpty(name)) return lastName;
+            return $"{lastName}, {name}";
+        }
     }
 }

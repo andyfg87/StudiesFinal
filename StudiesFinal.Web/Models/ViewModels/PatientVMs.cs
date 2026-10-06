@@ -12,8 +12,11 @@ namespace StudiesFinal.Web.Models.ViewModels
 
         [Display(Name = "Name")]
         public string? Name { get; set; }
-        [Display(Name = "Last Name")]
+        [Display(Name = "Last name")]
         public string? LastName { get; set; }
+
+        /// <summary>"Nombre Apellido".</summary>
+        public string FullName => Patient.FormatFull(Name, LastName);
 
         [Display(Name = "Date of birth")]
         public DateTime? DateOfBirth { get; set; }
@@ -38,10 +41,10 @@ namespace StudiesFinal.Web.Models.ViewModels
 
     public class PatientInputVM : IEntityInputModel<Patient, int>
     {
-        /// <summary>Nº de paciente (PatientID de Access). Se propone el siguiente libre.</summary>
-        [Required(ErrorMessage = "Patient number is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "Invalid patient number")]
-        [Display(Name = "Patient #")]
+        /// <summary>
+        /// Nº de paciente (PatientID de Access). No se muestra en el formulario: al crear lo
+        /// asigna el servidor (siguiente libre) y al editar viaja oculto.
+        /// </summary>
         public int Id { get; set; }
 
         [Required(ErrorMessage = "Name is required")]
@@ -50,6 +53,7 @@ namespace StudiesFinal.Web.Models.ViewModels
         public string? Name { get; set; }
         
         [StringLength(250)]
+        [Display(Name = "Last name")]
         public string? LastName { get; set; }
 
         [DataType(DataType.Date)]

@@ -22,8 +22,12 @@ namespace StudiesFinal.Web.Models.ViewModels
 
         public int PatientId { get; set; }
 
+        /// <summary>"Nombre Apellido".</summary>
         [Display(Name = "Patient")]
         public string? PatientName { get; set; }
+
+        /// <summary>"Apellido, Nombre" (informe impreso / PDF).</summary>
+        public string? PatientReportName { get; set; }
 
         public DateTime? PatientDateOfBirth { get; set; }
 
@@ -73,7 +77,8 @@ namespace StudiesFinal.Web.Models.ViewModels
             StudyName = entity.StudyName;
             Information = entity.Information;
             PatientId = entity.PatientId;
-            PatientName =$"{entity.Patient?.LastName ?? ""} {entity.Patient?.Name}";
+            PatientName = entity.Patient?.FullName;
+            PatientReportName = entity.Patient?.ReportName;
             PatientDateOfBirth = entity.Patient?.DateOfBirth;
             Status = entity.Status;
             Processed = entity.Processed;
@@ -107,6 +112,10 @@ namespace StudiesFinal.Web.Models.ViewModels
 
         /// <summary>Solo para mostrar el paciente elegido en el formulario.</summary>
         public string? PatientLabel { get; set; }
+
+        /// <summary>Texto del selector de paciente: "Nº · Nombre Apellido".</summary>
+        public static string? LabelFor(Patient? patient)
+            => patient == null ? null : $"{patient.Id} · {patient.FullName}";
 
         [Display(Name = "Template")]
         public int? TemplateId { get; set; }
@@ -185,7 +194,7 @@ namespace StudiesFinal.Web.Models.ViewModels
             Id = entity.Id;
             StudyDate = entity.StudyDate;
             PatientId = entity.PatientId;
-            PatientLabel = entity.Patient != null ? $"{entity.Patient.Id} · {entity.Patient.LastName ?? ""} · {entity.Patient.Name}" : null;
+            PatientLabel = LabelFor(entity.Patient);
             StudyName = entity.StudyName;
             Information = entity.Information;
             Processed = entity.Processed;

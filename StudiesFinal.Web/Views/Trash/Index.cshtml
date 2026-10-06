@@ -41,7 +41,7 @@
                             <td data-label="Date" class="text-nowrap">@s.StudyDate.ToString("MM/dd/yyyy")</td>
                             <td data-label="Study">@s.StudyName</td>
                             <td data-label="Patient">
-                                @s.Patient?.Name
+                                @s.Patient?.FullName
                                 @if (s.Patient?.IsDeleted == true)
                                 {
                                     <span class="ls-pill warning ms-1" title="The patient is deleted too; it will be restored with the study">deleted</span>
@@ -77,7 +77,7 @@
                     {
                         <tr>
                             <td data-label="#">@p.Id</td>
-                            <td data-label="Name">@p.Name</td>
+                            <td data-label="Name">@p.FullName</td>
                             <td data-label="D.O.B." class="text-nowrap">@p.DateOfBirth?.ToString("MM/dd/yyyy")</td>
                             <td data-label="Deleted" class="text-nowrap small">@When(p.DeletedAt)</td>
                             <td data-label="By" class="small">@p.DeletedByName</td>

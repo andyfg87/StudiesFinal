@@ -122,6 +122,12 @@ namespace StudiesFinal.Web.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public Task DetachAsync(TEntity entity)
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+            return Task.CompletedTask;
+        }
+
         /// <summary>e => e.Id == id (traducible a SQL para cualquier tipo de clave).</summary>
         private static Expression<Func<TEntity, bool>> IdEquals(TKey id)
         {
